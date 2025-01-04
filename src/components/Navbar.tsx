@@ -70,7 +70,7 @@ export const Navbar = () => {
         toast({
           variant: "destructive",
           title: t('common.wrongNetwork'),
-          description: "Please switch to Sepolia network to continue.",
+          description: t('common.switchNetwork'),
         });
         return;
       }
@@ -92,7 +92,7 @@ export const Navbar = () => {
             navigate("/voter");
             toast({
               title: t('common.welcome.voter'),
-              description: t('voter.status.verified'),
+              description: t('voter.status.eligible'),
             });
           }
         } else {
@@ -107,7 +107,7 @@ export const Navbar = () => {
         }
       }
     }
-  }, [isConnected, address, chainId, navigate, adminAddress, isVerifiedVoter, location.pathname]);
+  }, [isConnected, address, chainId, navigate, adminAddress, isVerifiedVoter, location.pathname, t]);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -136,7 +136,7 @@ export const Navbar = () => {
                 className="h-8 w-8 mr-2"
               />
               <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                Satya Vote
+                {t('nav.title')}
               </span>
             </div>
             
