@@ -42,7 +42,7 @@ export const writeContractWithConfirmation = async (
     args: args as any,
     chain: sepolia,
     account,
-  });
+  }) as { hash: `0x${string}` };
 
   const publicClient = await getPublicClient(config);
   await publicClient.waitForTransactionReceipt({ hash: result.hash });

@@ -79,6 +79,7 @@ export const useElectionData = (address: `0x${string}` | undefined) => {
     
     try {
       setIsVoting(true);
+
       const { hash } = await writeContract(config, {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
@@ -86,7 +87,7 @@ export const useElectionData = (address: `0x${string}` | undefined) => {
         args: [BigInt(candidateId)],
         chain: sepolia,
         account: address,
-      });
+      }) as { hash: `0x${string}` };
 
       toast({
         title: "Vote Submitted",

@@ -47,7 +47,7 @@ export const VoterManagement = () => {
         'approveVoter',
         [voterAddress as `0x${string}`],
         address
-      );
+      ) as { hash: `0x${string}` };
       
       toast({
         title: "Success",
@@ -74,7 +74,7 @@ export const VoterManagement = () => {
         'removeVoter',
         [voterAddress as `0x${string}`],
         address
-      );
+      ) as { hash: `0x${string}` };
       
       toast({
         title: "Success",
@@ -101,7 +101,7 @@ export const VoterManagement = () => {
         'removeAllVoters',
         [],
         address
-      );
+      ) as { hash: `0x${string}` };
       
       toast({
         title: "Success",

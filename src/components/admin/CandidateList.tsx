@@ -33,6 +33,7 @@ export const CandidateList = ({ candidates, isLoading, onCandidateDeleted }: Can
   const handleDeleteCandidate = async (id: number) => {
     try {
       setIsDeletingId(id);
+
       const { hash } = await writeContract(config, {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
@@ -40,7 +41,7 @@ export const CandidateList = ({ candidates, isLoading, onCandidateDeleted }: Can
         args: [BigInt(id)],
         chain: sepolia,
         account: address,
-      }) as { hash: `0x${string}` };
+      });
 
       toast({
         title: "Transaction Submitted",
@@ -127,3 +128,4 @@ export const CandidateList = ({ candidates, isLoading, onCandidateDeleted }: Can
     </Card>
   );
 };
+

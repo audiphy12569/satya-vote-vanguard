@@ -222,19 +222,6 @@ export const CONTRACT_ABI = [
 	{
 		"inputs": [
 			{
-				"internalType": "address",
-				"name": "_voter",
-				"type": "address"
-			}
-		],
-		"name": "removeVoter",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
 				"internalType": "uint256",
 				"name": "_durationInMinutes",
 				"type": "uint256"
@@ -346,9 +333,9 @@ export const CONTRACT_ABI = [
 		"name": "candidateCount",
 		"outputs": [
 			{
-				"internalType": "uint256",
+				"internalType": "uint96",
 				"name": "",
-				"type": "uint256"
+				"type": "uint96"
 			}
 		],
 		"stateMutability": "view",
@@ -365,9 +352,19 @@ export const CONTRACT_ABI = [
 		"name": "candidates",
 		"outputs": [
 			{
-				"internalType": "uint256",
+				"internalType": "uint96",
 				"name": "id",
-				"type": "uint256"
+				"type": "uint96"
+			},
+			{
+				"internalType": "uint96",
+				"name": "voteCount",
+				"type": "uint96"
+			},
+			{
+				"internalType": "bool",
+				"name": "isActive",
+				"type": "bool"
 			},
 			{
 				"internalType": "string",
@@ -388,16 +385,6 @@ export const CONTRACT_ABI = [
 				"internalType": "string",
 				"name": "logoIPFS",
 				"type": "string"
-			},
-			{
-				"internalType": "uint256",
-				"name": "voteCount",
-				"type": "uint256"
-			},
-			{
-				"internalType": "bool",
-				"name": "isActive",
-				"type": "bool"
 			}
 		],
 		"stateMutability": "view",
@@ -408,9 +395,9 @@ export const CONTRACT_ABI = [
 		"name": "currentElectionId",
 		"outputs": [
 			{
-				"internalType": "uint256",
+				"internalType": "uint96",
 				"name": "",
-				"type": "uint256"
+				"type": "uint96"
 			}
 		],
 		"stateMutability": "view",
@@ -427,24 +414,24 @@ export const CONTRACT_ABI = [
 		"name": "electionHistories",
 		"outputs": [
 			{
-				"internalType": "uint256",
+				"internalType": "uint96",
 				"name": "id",
-				"type": "uint256"
+				"type": "uint96"
 			},
 			{
-				"internalType": "uint256",
-				"name": "startTime",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "endTime",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
+				"internalType": "uint96",
 				"name": "totalVotes",
-				"type": "uint256"
+				"type": "uint96"
+			},
+			{
+				"internalType": "uint128",
+				"name": "startTime",
+				"type": "uint128"
+			},
+			{
+				"internalType": "uint128",
+				"name": "endTime",
+				"type": "uint128"
 			}
 		],
 		"stateMutability": "view",
@@ -461,29 +448,29 @@ export const CONTRACT_ABI = [
 		"name": "elections",
 		"outputs": [
 			{
-				"internalType": "uint256",
+				"internalType": "uint96",
 				"name": "id",
-				"type": "uint256"
+				"type": "uint96"
 			},
 			{
-				"internalType": "uint256",
+				"internalType": "uint96",
+				"name": "totalVotes",
+				"type": "uint96"
+			},
+			{
+				"internalType": "uint128",
 				"name": "startTime",
-				"type": "uint256"
+				"type": "uint128"
 			},
 			{
-				"internalType": "uint256",
+				"internalType": "uint128",
 				"name": "endTime",
-				"type": "uint256"
+				"type": "uint128"
 			},
 			{
 				"internalType": "bool",
 				"name": "isActive",
 				"type": "bool"
-			},
-			{
-				"internalType": "uint256",
-				"name": "totalVotes",
-				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -600,9 +587,14 @@ export const CONTRACT_ABI = [
 			{
 				"components": [
 					{
-						"internalType": "uint256",
+						"internalType": "uint96",
 						"name": "candidateId",
-						"type": "uint256"
+						"type": "uint96"
+					},
+					{
+						"internalType": "uint96",
+						"name": "voteCount",
+						"type": "uint96"
 					},
 					{
 						"internalType": "string",
@@ -613,11 +605,6 @@ export const CONTRACT_ABI = [
 						"internalType": "string",
 						"name": "party",
 						"type": "string"
-					},
-					{
-						"internalType": "uint256",
-						"name": "voteCount",
-						"type": "uint256"
 					}
 				],
 				"internalType": "struct VotingSystem.ElectionResult[]",
@@ -693,9 +680,9 @@ export const CONTRACT_ABI = [
 		"name": "totalElections",
 		"outputs": [
 			{
-				"internalType": "uint256",
+				"internalType": "uint96",
 				"name": "",
-				"type": "uint256"
+				"type": "uint96"
 			}
 		],
 		"stateMutability": "view",
