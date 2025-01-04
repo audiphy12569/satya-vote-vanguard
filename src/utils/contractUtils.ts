@@ -1,6 +1,62 @@
-import { readContract } from '@wagmi/core';
+import { readContract, writeContract } from '@wagmi/core';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 import { config } from "@/config/web3";
+
+interface ElectionStatus {
+  isActive: boolean;
+  startTime: bigint;
+  endTime: bigint;
+  totalVotes: bigint;
+}
+
+interface ElectionResult {
+  candidateId: number;
+  voteCount: number;
+  candidateName: string;
+  party: string;
+}
+
+interface ElectionHistory {
+  id: bigint;
+  startTime: bigint;
+  endTime: bigint;
+  totalVotes: bigint;
+  results: ElectionResult[];
+}
+
+export const getAdminAddress = async (): Promise<string> => {
+  try {
+    const data = await readContract(config, {
+      address: CONTRACT_ADDRESS as `0x${string}`,
+      abi: CONTRACT_ABI,
+      functionName: 'admin',
+    });
+    return data as string;
+  } catch (error) {
+    console.error("Failed to fetch admin address:", error);
+    throw error;
+  }
+};
+
+export const writeContractWithConfirmation = async (
+  functionName: string,
+  args: any[],
+  address?: string
+) => {
+  try {
+    const { hash } = await writeContract(config, {
+      address: CONTRACT_ADDRESS as `0x${string}`,
+      abi: CONTRACT_ABI,
+      functionName,
+      args,
+      account: address as `0x${string}`,
+    });
+    return hash;
+  } catch (error) {
+    console.error(`Failed to execute ${functionName}:`, error);
+    throw error;
+  }
+};
 
 export const checkVoterStatus = async (address: string): Promise<boolean> => {
   try {
