@@ -1,6 +1,5 @@
 import { readContract } from '@wagmi/core';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
-import { sepolia } from "wagmi/chains";
 import { config } from "@/config/web3";
 
 export const getAdminAddress = async () => {
