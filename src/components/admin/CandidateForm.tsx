@@ -35,7 +35,14 @@ export const CandidateForm = ({ onSuccess }: { onSuccess?: () => void }) => {
 
     try {
       setIsSubmitting(true);
-      const ipfsHash = await uploadToIPFS(data.logo);
+      
+      // Ensure we have a valid file before uploading
+      const logoFile = data.logo;
+      if (!logoFile || !(logoFile instanceof File)) {
+        throw new Error('Please select a valid logo file');
+      }
+
+      const ipfsHash = await uploadToIPFS(logoFile);
       
       const result = await writeContract(config, {
         address: CONTRACT_ADDRESS as `0x${string}`,
@@ -58,12 +65,12 @@ export const CandidateForm = ({ onSuccess }: { onSuccess?: () => void }) => {
 
       form.reset();
       onSuccess?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to add candidate:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to add candidate",
+        description: error.message || "Failed to add candidate",
       });
     } finally {
       setIsSubmitting(false);
@@ -97,7 +104,12 @@ export const CandidateForm = ({ onSuccess }: { onSuccess?: () => void }) => {
           </div>
           <div className="space-y-2">
             <Label htmlFor="logo">Logo</Label>
-            <Input id="logo" type="file" {...form.register("logo")} />
+            <Input 
+              id="logo" 
+              type="file" 
+              accept="image/*"
+              {...form.register("logo")} 
+            />
             {form.formState.errors.logo && (
               <p className="text-sm text-red-500">{form.formState.errors.logo.message}</p>
             )}

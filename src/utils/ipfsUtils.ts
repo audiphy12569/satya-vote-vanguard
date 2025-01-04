@@ -3,14 +3,12 @@ import { PINATA_API_KEY, PINATA_SECRET_KEY } from '@/config/contract';
 
 export const uploadToIPFS = async (file: File): Promise<string> => {
   try {
-    const formData = new FormData();
-    
     // Ensure we're passing a valid File object
-    if (!(file instanceof File)) {
+    if (!file || !(file instanceof File)) {
       throw new Error('Invalid file object');
     }
     
-    // Add the file to form data with the correct field name
+    const formData = new FormData();
     formData.append('file', file);
 
     const response = await axios.post(
@@ -21,7 +19,6 @@ export const uploadToIPFS = async (file: File): Promise<string> => {
         headers: {
           pinata_api_key: PINATA_API_KEY,
           pinata_secret_api_key: PINATA_SECRET_KEY,
-          // Remove Content-Type header to let axios set it automatically with boundary
         }
       }
     );
