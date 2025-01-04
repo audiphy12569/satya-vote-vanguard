@@ -24,6 +24,7 @@ export const Navbar = () => {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
         functionName: 'admin',
+        chainId: sepolia.id
       });
       setAdminAddress(data as string);
     } catch (error) {
@@ -44,6 +45,7 @@ export const Navbar = () => {
         abi: CONTRACT_ABI,
         functionName: 'voters',
         args: [address],
+        chainId: sepolia.id
       });
       setIsVerifiedVoter(Boolean(isEligible));
     } catch (error) {
@@ -53,14 +55,16 @@ export const Navbar = () => {
   };
 
   useEffect(() => {
-    fetchAdminAddress();
-  }, []);
+    if (chainId === sepolia.id) {
+      fetchAdminAddress();
+    }
+  }, [chainId]);
 
   useEffect(() => {
-    if (isConnected && address) {
+    if (isConnected && address && chainId === sepolia.id) {
       checkVoterEligibility();
     }
-  }, [isConnected, address]);
+  }, [isConnected, address, chainId]);
 
   useEffect(() => {
     if (isConnected && address && adminAddress) {
