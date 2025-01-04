@@ -2,12 +2,12 @@ import { Button } from "@/components/ui/button";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { useNavigate } from "react-router-dom";
 import { walletConnect } from "wagmi/connectors";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { sepolia } from "wagmi/chains";
 import { useChainId, useConfig } from "wagmi";
-
-const ADMIN_ADDRESS = "0x123..."; // Replace with your actual admin address
+import { createPublicClient, http, getContract } from "viem";
+import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 
 export const Navbar = () => {
   const { address, isConnected } = useAccount();
@@ -17,6 +17,36 @@ export const Navbar = () => {
   const config = useConfig();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [adminAddress, setAdminAddress] = useState<string | null>(null);
+
+  const fetchAdminAddress = async () => {
+    try {
+      const publicClient = createPublicClient({
+        chain: sepolia,
+        transport: http()
+      });
+
+      const contract = getContract({
+        address: CONTRACT_ADDRESS as `0x${string}`,
+        abi: CONTRACT_ABI,
+        publicClient,
+      });
+
+      const admin = await contract.read.admin();
+      setAdminAddress(admin);
+    } catch (error) {
+      console.error("Failed to fetch admin address:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch admin address from contract",
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchAdminAddress();
+  }, []);
 
   const handleConnect = async () => {
     try {
@@ -46,7 +76,7 @@ export const Navbar = () => {
   };
 
   useEffect(() => {
-    if (isConnected && address) {
+    if (isConnected && address && adminAddress) {
       if (chainId !== sepolia.id) {
         toast({
           variant: "destructive",
@@ -58,13 +88,13 @@ export const Navbar = () => {
       }
 
       // Check if connected address is admin
-      if (address.toLowerCase() === ADMIN_ADDRESS.toLowerCase()) {
+      if (address.toLowerCase() === adminAddress.toLowerCase()) {
         navigate("/admin");
       } else {
         navigate("/voter");
       }
     }
-  }, [isConnected, address, chainId, navigate, config]);
+  }, [isConnected, address, chainId, navigate, config, adminAddress]);
 
   return (
     <nav className="bg-white dark:bg-gray-800 shadow-lg">
