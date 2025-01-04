@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { readContract } from '@wagmi/core';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 import { config } from "@/config/web3";
-import { getElectionHistory } from "@/utils/contractUtils";
+import { getElectionHistory } from "@/utils/electionUtils";
 
 export const ElectionHistory = () => {
   const [elections, setElections] = useState<any[]>([]);
