@@ -1,31 +1,24 @@
-import { Button } from "@/components/ui/button";
-import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { useAccount } from "wagmi";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { sepolia } from "wagmi/chains";
 import { useChainId } from "wagmi";
 import { getAdminAddress, checkVoterStatus } from "@/utils/contractUtils";
-import { Users, UserPlus, Vote, Globe2 } from "lucide-react";
+import { LanguageSwitcher } from "./navbar/LanguageSwitcher";
+import { WalletConnection } from "./navbar/WalletConnection";
+import { AdminNavigation } from "./navbar/AdminNavigation";
 import { useTranslation } from 'react-i18next';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 export const Navbar = () => {
   const { address, isConnected } = useAccount();
-  const { connect, connectors } = useConnect();
-  const { disconnect } = useDisconnect();
   const chainId = useChainId();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const [adminAddress, setAdminAddress] = useState<string | null>(null);
   const [isVerifiedVoter, setIsVerifiedVoter] = useState<boolean>(false);
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
 
   const fetchAdminAddress = async () => {
     try {
@@ -82,8 +75,8 @@ export const Navbar = () => {
         if (!currentPath.startsWith('/admin')) {
           navigate("/admin");
           toast({
-            title: "Welcome Admin",
-            description: "You have been redirected to the admin dashboard.",
+            title: t('common.welcome.admin'),
+            description: t('admin.redirected'),
           });
         }
       } else {
@@ -91,8 +84,8 @@ export const Navbar = () => {
           if (currentPath !== '/voter') {
             navigate("/voter");
             toast({
-              title: "Welcome Voter",
-              description: "You have been verified as an eligible voter.",
+              title: t('common.welcome.voter'),
+              description: t('voter.status.verified'),
             });
           }
         } else {
@@ -100,8 +93,8 @@ export const Navbar = () => {
             navigate("/");
             toast({
               variant: "destructive",
-              title: "Not Verified",
-              description: "You are not verified to vote. Please contact the admin.",
+              title: t('voter.status.notVerified'),
+              description: t('voter.status.contactAdmin'),
             });
           }
         }
@@ -109,16 +102,10 @@ export const Navbar = () => {
     }
   }, [isConnected, address, chainId, navigate, adminAddress, isVerifiedVoter, location.pathname]);
 
-  const isActive = (path: string) => location.pathname === path;
-
   const handleNavigation = (path: string) => {
     if (address?.toLowerCase() === adminAddress?.toLowerCase()) {
       navigate(path);
     }
-  };
-
-  const changeLanguage = (lng: string) => {
-    i18n.changeLanguage(lng);
   };
 
   return (
@@ -141,38 +128,7 @@ export const Navbar = () => {
             </div>
             
             {isConnected && adminAddress && address?.toLowerCase() === adminAddress.toLowerCase() && (
-              <div className="ml-8 hidden md:flex space-x-4">
-                <button 
-                  onClick={() => handleNavigation("/admin/voters")}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200
-                    ${isActive("/admin/voters") 
-                      ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900" 
-                      : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"}`}
-                >
-                  <Users className="w-4 h-4" />
-                  <span>{t('nav.voters')}</span>
-                </button>
-                <button 
-                  onClick={() => handleNavigation("/admin/candidates")}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200
-                    ${isActive("/admin/candidates") 
-                      ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900" 
-                      : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"}`}
-                >
-                  <UserPlus className="w-4 h-4" />
-                  <span>{t('nav.candidates')}</span>
-                </button>
-                <button 
-                  onClick={() => handleNavigation("/admin/election")}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200
-                    ${isActive("/admin/election") 
-                      ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900" 
-                      : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"}`}
-                >
-                  <Vote className="w-4 h-4" />
-                  <span>{t('nav.election')}</span>
-                </button>
-              </div>
+              <AdminNavigation onNavigate={handleNavigation} />
             )}
           </div>
           
@@ -183,41 +139,8 @@ export const Navbar = () => {
               </span>
             )}
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <Globe2 className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => changeLanguage('en')}>
-                  English
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => changeLanguage('hi')}>
-                  हिंदी
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {isConnected ? (
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-600 dark:text-gray-300">
-                  {`${address?.slice(0, 6)}...${address?.slice(-4)}`}
-                </span>
-                <Button
-                  variant="outline"
-                  className="hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700"
-                  onClick={() => {
-                    disconnect();
-                    navigate("/");
-                  }}
-                >
-                  {t('common.disconnect')}
-                </Button>
-              </div>
-            ) : (
-              <w3m-button />
-            )}
+            <LanguageSwitcher />
+            <WalletConnection />
           </div>
         </div>
       </div>
