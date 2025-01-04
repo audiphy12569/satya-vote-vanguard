@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -37,7 +38,7 @@ export const CandidateList = ({ candidates, isLoading, onCandidateDeleted }: Can
         abi: CONTRACT_ABI,
         functionName: 'removeCandidate',
         args: [BigInt(id)],
-        chainId: sepolia.id,
+        chain: sepolia,
         account: address,
       });
 

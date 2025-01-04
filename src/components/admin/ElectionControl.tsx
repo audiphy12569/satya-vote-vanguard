@@ -33,7 +33,7 @@ export const ElectionControl = () => {
         abi: CONTRACT_ABI,
         functionName: 'startElection',
         args: [BigInt(Number(duration))],
-        chainId: sepolia.id,
+        chain: sepolia,
         account: address,
       });
 

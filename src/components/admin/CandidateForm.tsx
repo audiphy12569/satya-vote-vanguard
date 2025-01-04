@@ -61,7 +61,7 @@ export const CandidateForm = ({ onCandidateAdded }: { onCandidateAdded: () => Pr
           candidateForm.tagline,
           ipfsHash,
         ],
-        chainId: sepolia.id,
+        chain: sepolia,
         account: address,
       });
 

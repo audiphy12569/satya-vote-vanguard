@@ -70,7 +70,7 @@ export const VoterManagement = () => {
         abi: CONTRACT_ABI,
         functionName: 'approveVoter',
         args: [voterAddress as `0x${string}`],
-        chainId: sepolia.id,
+        chain: sepolia,
         account: address,
       });
 
@@ -110,7 +110,7 @@ export const VoterManagement = () => {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
         functionName: 'removeAllVoters',
-        chainId: sepolia.id,
+        chain: sepolia,
         account: address,
       });
 
