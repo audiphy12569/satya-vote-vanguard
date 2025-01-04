@@ -1,8 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { useAccount, useConnect, useDisconnect, useNetwork, useSwitchNetwork } from "wagmi";
 import { useNavigate } from "react-router-dom";
 import { walletConnect } from "wagmi/connectors";
 import { useEffect } from "react";
+import { useToast } from "@/components/ui/use-toast";
+import { sepolia } from "wagmi/chains";
 
 const ADMIN_ADDRESS = "0x123..."; // Replace with your actual admin address
 
@@ -10,10 +12,23 @@ export const Navbar = () => {
   const { address, isConnected } = useAccount();
   const { connect } = useConnect();
   const { disconnect } = useDisconnect();
+  const { chain } = useNetwork();
+  const { switchNetwork } = useSwitchNetwork();
+  const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleConnect = async () => {
     try {
+      if (chain && chain.id !== sepolia.id) {
+        toast({
+          variant: "destructive",
+          title: "Wrong Network",
+          description: "Please switch to Sepolia network to continue.",
+        });
+        switchNetwork?.(sepolia.id);
+        return;
+      }
+
       await connect({ 
         connector: walletConnect({ 
           projectId: import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID 
@@ -21,11 +36,26 @@ export const Navbar = () => {
       });
     } catch (error) {
       console.error("Failed to connect wallet:", error);
+      toast({
+        variant: "destructive",
+        title: "Connection Failed",
+        description: "Failed to connect wallet. Please try again.",
+      });
     }
   };
 
   useEffect(() => {
     if (isConnected && address) {
+      if (chain && chain.id !== sepolia.id) {
+        toast({
+          variant: "destructive",
+          title: "Wrong Network",
+          description: "Please switch to Sepolia network to continue.",
+        });
+        switchNetwork?.(sepolia.id);
+        return;
+      }
+
       // Check if connected address is admin
       if (address.toLowerCase() === ADMIN_ADDRESS.toLowerCase()) {
         navigate("/admin");
@@ -33,7 +63,7 @@ export const Navbar = () => {
         navigate("/voter");
       }
     }
-  }, [isConnected, address, navigate]);
+  }, [isConnected, address, chain, navigate, switchNetwork]);
 
   return (
     <nav className="bg-white dark:bg-gray-800 shadow-lg">
@@ -48,6 +78,11 @@ export const Navbar = () => {
             </span>
           </div>
           <div className="flex items-center space-x-4">
+            {chain && chain.id !== sepolia.id && (
+              <span className="text-sm text-red-500">
+                Wrong Network
+              </span>
+            )}
             {isConnected ? (
               <div className="flex items-center space-x-4">
                 <span className="text-sm text-gray-600 dark:text-gray-300">
