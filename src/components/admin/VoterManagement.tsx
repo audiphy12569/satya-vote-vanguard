@@ -56,7 +56,7 @@ export const VoterManagement = () => {
   const handleApproveVoter = async () => {
     try {
       setIsLoading(true);
-      const tx = await writeContract(config, {
+      const { hash } = await writeContract(config, {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
         functionName: 'approveVoter',
@@ -65,7 +65,15 @@ export const VoterManagement = () => {
         account: address,
       });
 
-      await tx.wait();
+      toast({
+        title: "Transaction Submitted",
+        description: "Please wait for confirmation...",
+        variant: "default",
+      });
+
+      // Wait for transaction confirmation
+      const provider = await config.getPublicClient();
+      await provider.waitForTransactionReceipt({ hash });
       
       toast({
         title: "Transaction Successful",
@@ -90,7 +98,7 @@ export const VoterManagement = () => {
   const handleRemoveAllVoters = async () => {
     try {
       setIsDeleting(true);
-      const tx = await writeContract(config, {
+      const { hash } = await writeContract(config, {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
         functionName: 'removeAllVoters',
@@ -98,7 +106,15 @@ export const VoterManagement = () => {
         account: address,
       });
 
-      await tx.wait();
+      toast({
+        title: "Transaction Submitted",
+        description: "Please wait for confirmation...",
+        variant: "default",
+      });
+
+      // Wait for transaction confirmation
+      const provider = await config.getPublicClient();
+      await provider.waitForTransactionReceipt({ hash });
       
       toast({
         title: "Transaction Successful",

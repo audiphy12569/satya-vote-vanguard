@@ -55,7 +55,7 @@ export const CandidateManagement = () => {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
         functionName: 'getCandidateCount',
-        chain: sepolia,
+        chainId: sepolia.id,
         account: address,
       });
 
@@ -66,7 +66,7 @@ export const CandidateManagement = () => {
           abi: CONTRACT_ABI,
           functionName: 'getCandidate',
           args: [BigInt(i)],
-          chain: sepolia,
+          chainId: sepolia.id,
           account: address,
         });
         candidatesData.push({
@@ -104,7 +104,7 @@ export const CandidateManagement = () => {
 
       const ipfsHash = await uploadToIPFS(selectedFile);
       
-      const tx = await writeContract(config, {
+      const { hash } = await writeContract(config, {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
         functionName: 'addCandidate',
@@ -114,12 +114,19 @@ export const CandidateManagement = () => {
           candidateForm.tagline,
           ipfsHash,
         ],
-        chain: sepolia,
+        chainId: sepolia.id,
         account: address,
       });
 
+      toast({
+        title: "Transaction Submitted",
+        description: "Please wait for confirmation...",
+        variant: "default",
+      });
+
       // Wait for transaction confirmation
-      await tx.wait();
+      const provider = await config.getPublicClient();
+      await provider.waitForTransactionReceipt({ hash });
       
       toast({
         title: "Transaction Successful",
@@ -145,17 +152,24 @@ export const CandidateManagement = () => {
   const handleDeleteCandidate = async (id: number) => {
     try {
       setIsLoading(prev => ({ ...prev, deleteCandidate: true }));
-      const tx = await writeContract(config, {
+      const { hash } = await writeContract(config, {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
         functionName: 'removeCandidate',
         args: [BigInt(id)],
-        chain: sepolia,
+        chainId: sepolia.id,
         account: address,
       });
 
+      toast({
+        title: "Transaction Submitted",
+        description: "Please wait for confirmation...",
+        variant: "default",
+      });
+
       // Wait for transaction confirmation
-      await tx.wait();
+      const provider = await config.getPublicClient();
+      await provider.waitForTransactionReceipt({ hash });
       
       toast({
         title: "Transaction Successful",

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { writeContract, readContract } from '@wagmi/core';
+import { writeContract } from '@wagmi/core';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 import { Loader2 } from "lucide-react";
 import { config } from "@/config/web3";
@@ -19,17 +19,24 @@ export const ElectionControl = () => {
   const handleStartElection = async () => {
     try {
       setIsLoading(true);
-      const tx = await writeContract(config, {
+      const { hash } = await writeContract(config, {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
         functionName: 'startElection',
         args: [BigInt(Number(duration))],
-        chain: sepolia,
+        chainId: sepolia.id,
         account: address,
       });
 
+      toast({
+        title: "Transaction Submitted",
+        description: "Please wait for confirmation...",
+        variant: "default",
+      });
+
       // Wait for transaction confirmation
-      await tx.wait();
+      const provider = await config.getPublicClient();
+      await provider.waitForTransactionReceipt({ hash });
       
       toast({
         title: "Transaction Successful",
