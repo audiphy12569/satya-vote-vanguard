@@ -100,7 +100,7 @@ export const Navbar = () => {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <span 
-              className="text-2xl font-bold text-gray-900 dark:text-white cursor-pointer hover-scale"
+              className="text-2xl font-bold text-gray-900 dark:text-white cursor-pointer hover:scale-105 transition-transform duration-200"
               onClick={() => navigate("/")}
             >
               Satya Vote
@@ -110,21 +110,30 @@ export const Navbar = () => {
               <div className="ml-8 hidden md:flex space-x-4">
                 <button 
                   onClick={() => navigate("/admin/voters")}
-                  className={`nav-link flex items-center space-x-2 ${isActive("/admin/voters") ? "active-nav-link" : ""}`}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200
+                    ${isActive("/admin/voters") 
+                      ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900" 
+                      : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"}`}
                 >
                   <Users className="w-4 h-4" />
                   <span>Voters</span>
                 </button>
                 <button 
                   onClick={() => navigate("/admin/candidates")}
-                  className={`nav-link flex items-center space-x-2 ${isActive("/admin/candidates") ? "active-nav-link" : ""}`}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200
+                    ${isActive("/admin/candidates") 
+                      ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900" 
+                      : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"}`}
                 >
                   <UserPlus className="w-4 h-4" />
                   <span>Candidates</span>
                 </button>
                 <button 
                   onClick={() => navigate("/admin/election")}
-                  className={`nav-link flex items-center space-x-2 ${isActive("/admin/election") ? "active-nav-link" : ""}`}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200
+                    ${isActive("/admin/election") 
+                      ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900" 
+                      : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"}`}
                 >
                   <Vote className="w-4 h-4" />
                   <span>Election</span>
@@ -146,7 +155,7 @@ export const Navbar = () => {
                 </span>
                 <Button
                   variant="outline"
-                  className="btn-hover bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700"
+                  className="hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700"
                   onClick={() => {
                     disconnect();
                     navigate("/");
