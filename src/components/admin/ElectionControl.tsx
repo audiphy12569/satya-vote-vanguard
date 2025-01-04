@@ -17,6 +17,15 @@ export const ElectionControl = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleStartElection = async () => {
+    if (!duration) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please enter a duration."
+      });
+      return;
+    }
+
     try {
       setIsLoading(true);
       const { hash } = await writeContract(config, {

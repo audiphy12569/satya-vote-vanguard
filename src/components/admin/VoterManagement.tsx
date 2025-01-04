@@ -54,6 +54,15 @@ export const VoterManagement = () => {
   }, []);
 
   const handleApproveVoter = async () => {
+    if (!voterAddress) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please enter a voter address."
+      });
+      return;
+    }
+
     try {
       setIsLoading(true);
       const { hash } = await writeContract(config, {
