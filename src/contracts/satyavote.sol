@@ -100,22 +100,6 @@ contract VotingSystem {
         emit VoterApproved(_voter);
     }
 
-    function removeVoter(address _voter) external onlyAdmin noReentrant {
-        if (!approvedVoters[_voter]) revert VoterNotFound();
-        approvedVoters[_voter] = false;
-        
-        // Remove voter from voterList
-        for (uint i = 0; i < voterList.length; i++) {
-            if (voterList[i] == _voter) {
-                voterList[i] = voterList[voterList.length - 1];
-                voterList.pop();
-                break;
-            }
-        }
-        
-        emit VoterRemoved(_voter);
-    }
-
     function removeAllVoters() external onlyAdmin noReentrant {
         for (uint i = 0; i < voterList.length; i++) {
             approvedVoters[voterList[i]] = false;
@@ -156,7 +140,7 @@ contract VotingSystem {
         if (_durationInMinutes == 0) revert InvalidDuration();
         if (getActiveCandidateCount() < 2) revert MinimumCandidatesRequired();
         
-        // Store previous election results if exists
+        // Check and end previous election if exists
         if (currentElectionId > 0) {
             Election storage currentElection = elections[currentElectionId];
             if (currentElection.isActive) {
@@ -221,11 +205,13 @@ contract VotingSystem {
     function vote(uint256 _candidateId) external onlyApprovedVoter noReentrant {
         Election storage election = elections[currentElectionId];
         
-        if (!election.isActive) revert ElectionNotActive();
-        if (block.timestamp > election.endTime) {
+        // Check if election has ended based on time
+        if (block.timestamp > election.endTime && election.isActive) {
             _endElection(currentElectionId);
             revert ElectionHasEnded();
         }
+        
+        if (!election.isActive) revert ElectionNotActive();
         if (election.hasVoted[msg.sender]) revert AlreadyVoted();
         if (_candidateId == 0 || _candidateId > candidateCount) revert InvalidCandidate();
         if (!candidates[_candidateId].isActive) revert InvalidCandidate();
@@ -278,8 +264,15 @@ contract VotingSystem {
         uint256 totalVotes
     ) {
         Election storage election = elections[currentElectionId];
+        bool isCurrentlyActive = election.isActive;
+        
+        // Check if election has ended based on time
+        if (isCurrentlyActive && block.timestamp > election.endTime) {
+            isCurrentlyActive = false;
+        }
+        
         return (
-            election.isActive,
+            isCurrentlyActive,
             election.startTime,
             election.endTime,
             election.totalVotes
