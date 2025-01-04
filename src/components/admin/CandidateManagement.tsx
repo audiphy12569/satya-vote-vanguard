@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,9 +8,13 @@ import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 import { Loader2, Trash2 } from "lucide-react";
 import axios from 'axios';
 import { config } from "@/config/web3";
+import { sepolia } from "wagmi/chains";
+import { useAccount } from "wagmi";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const CandidateManagement = () => {
   const { toast } = useToast();
+  const { address } = useAccount();
   const [candidateForm, setCandidateForm] = useState({
     name: "",
     party: "",
@@ -20,7 +24,8 @@ export const CandidateManagement = () => {
   const [candidatesList, setCandidatesList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState({
     addCandidate: false,
-    deleteCandidate: false
+    deleteCandidate: false,
+    fetchCandidates: false
   });
 
   const uploadToIPFS = async (file: File) => {
@@ -45,10 +50,13 @@ export const CandidateManagement = () => {
 
   const fetchCandidates = async () => {
     try {
+      setIsLoading(prev => ({ ...prev, fetchCandidates: true }));
       const count = await readContract(config, {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
         functionName: 'getCandidateCount',
+        chain: sepolia,
+        account: address,
       });
 
       const candidatesData = [];
@@ -58,6 +66,8 @@ export const CandidateManagement = () => {
           abi: CONTRACT_ABI,
           functionName: 'getCandidate',
           args: [BigInt(i)],
+          chain: sepolia,
+          account: address,
         });
         candidatesData.push({
           id: i,
@@ -71,8 +81,19 @@ export const CandidateManagement = () => {
       setCandidatesList(candidatesData);
     } catch (error) {
       console.error("Failed to fetch candidates:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch candidates."
+      });
+    } finally {
+      setIsLoading(prev => ({ ...prev, fetchCandidates: false }));
     }
   };
+
+  useEffect(() => {
+    fetchCandidates();
+  }, []);
 
   const handleAddCandidate = async () => {
     try {
@@ -83,7 +104,7 @@ export const CandidateManagement = () => {
 
       const ipfsHash = await uploadToIPFS(selectedFile);
       
-      await writeContract(config, {
+      const tx = await writeContract(config, {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
         functionName: 'addCandidate',
@@ -93,17 +114,24 @@ export const CandidateManagement = () => {
           candidateForm.tagline,
           ipfsHash,
         ],
+        chain: sepolia,
+        account: address,
       });
 
+      // Wait for transaction confirmation
+      await tx.wait();
+      
       toast({
-        title: "Candidate Added",
-        description: `${candidateForm.name} has been added as a candidate.`
+        title: "Transaction Successful",
+        description: `Candidate ${candidateForm.name} has been added successfully.`,
+        variant: "default",
       });
       
       await fetchCandidates();
       setCandidateForm({ name: "", party: "", tagline: "" });
       setSelectedFile(null);
     } catch (error) {
+      console.error("Failed to add candidate:", error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -117,18 +145,27 @@ export const CandidateManagement = () => {
   const handleDeleteCandidate = async (id: number) => {
     try {
       setIsLoading(prev => ({ ...prev, deleteCandidate: true }));
-      await writeContract(config, {
+      const tx = await writeContract(config, {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
         functionName: 'removeCandidate',
         args: [BigInt(id)],
+        chain: sepolia,
+        account: address,
       });
+
+      // Wait for transaction confirmation
+      await tx.wait();
+      
       toast({
-        title: "Candidate Removed",
-        description: "The candidate has been removed successfully."
+        title: "Transaction Successful",
+        description: "Candidate has been removed successfully.",
+        variant: "default",
       });
+      
       await fetchCandidates();
     } catch (error) {
+      console.error("Failed to remove candidate:", error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -183,28 +220,53 @@ export const CandidateManagement = () => {
           <CardTitle>Candidates List</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            {candidatesList.map((candidate) => (
-              <div key={candidate.id} className="p-3 border rounded flex justify-between items-center">
-                <div>
-                  <p className="font-semibold">{candidate.name}</p>
-                  <p className="text-sm text-gray-600">{candidate.party}</p>
+          {isLoading.fetchCandidates ? (
+            <div className="flex justify-center">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : candidatesList.length === 0 ? (
+            <Alert>
+              <AlertDescription>
+                No candidates found. Add a candidate to get started.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <div className="space-y-2">
+              {candidatesList.map((candidate) => (
+                <div key={candidate.id} className="p-3 border rounded flex justify-between items-center">
+                  <div className="flex items-center space-x-4">
+                    {candidate.logoIPFS && (
+                      <img 
+                        src={candidate.logoIPFS.replace('ipfs://', 'https://ipfs.io/ipfs/')} 
+                        alt={`${candidate.name}'s logo`}
+                        className="w-10 h-10 rounded-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/placeholder.svg';
+                        }}
+                      />
+                    )}
+                    <div>
+                      <p className="font-semibold">{candidate.name}</p>
+                      <p className="text-sm text-gray-600">{candidate.party}</p>
+                      <p className="text-xs text-gray-500">{candidate.tagline}</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => handleDeleteCandidate(candidate.id)}
+                    disabled={isLoading.deleteCandidate}
+                  >
+                    {isLoading.deleteCandidate ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </Button>
                 </div>
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => handleDeleteCandidate(candidate.id)}
-                  disabled={isLoading.deleteCandidate}
-                >
-                  {isLoading.deleteCandidate ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </>
