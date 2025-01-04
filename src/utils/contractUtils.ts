@@ -1,6 +1,7 @@
-import { readContract } from '@wagmi/core';
+import { readContract, writeContract, getPublicClient } from '@wagmi/core';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 import { config } from "@/config/web3";
+import { sepolia } from "wagmi/chains";
 
 export const getAdminAddress = async () => {
   try {
@@ -37,4 +38,23 @@ export const checkVoterStatus = async (address: string) => {
     console.error("Error checking voter status:", error);
     throw error;
   }
+};
+
+export const writeContractWithConfirmation = async (
+  functionName: string,
+  args: unknown[],
+  contractAddress: string,
+) => {
+  const { hash } = await writeContract(config, {
+    address: contractAddress as `0x${string}`,
+    abi: CONTRACT_ABI,
+    functionName,
+    args,
+    chain: sepolia,
+  });
+
+  const publicClient = await getPublicClient(config);
+  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+  
+  return receipt;
 };
