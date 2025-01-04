@@ -12,14 +12,12 @@ if (!projectId) {
 const metadata = {
   name: 'Satya Vote',
   description: 'A decentralized voting system',
-  url: 'https://satyavote.com', // Add your website URL
+  url: 'https://satyavote.com',
   icons: ['https://avatars.githubusercontent.com/u/37784886']
 }
 
-const chains = [sepolia];
-
 export const config = defaultWagmiConfig({
-  chains,
+  chains: [sepolia] as const,
   projectId,
   metadata,
   enableWalletConnect: true,
@@ -30,6 +28,8 @@ export const config = defaultWagmiConfig({
 createWeb3Modal({
   wagmiConfig: config,
   projectId,
-  chains,
-  enableAnalytics: true,
+  themeMode: 'light',
+  themeVariables: {
+    '--w3m-accent': '#7c3aed',
+  },
 });

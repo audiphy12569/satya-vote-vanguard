@@ -16,6 +16,7 @@ export const Navbar = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [adminAddress, setAdminAddress] = useState<string | null>(null);
+  const [isVerifiedVoter, setIsVerifiedVoter] = useState<boolean>(false);
 
   const fetchAdminAddress = async () => {
     try {
@@ -35,34 +36,31 @@ export const Navbar = () => {
     }
   };
 
+  const checkVoterEligibility = async () => {
+    if (!address) return;
+    try {
+      const isEligible = await readContract({
+        address: CONTRACT_ADDRESS as `0x${string}`,
+        abi: CONTRACT_ABI,
+        functionName: 'voters',
+        args: [address],
+      });
+      setIsVerifiedVoter(Boolean(isEligible));
+    } catch (error) {
+      console.error("Failed to check voter eligibility:", error);
+      setIsVerifiedVoter(false);
+    }
+  };
+
   useEffect(() => {
     fetchAdminAddress();
   }, []);
 
-  const handleConnect = async () => {
-    try {
-      if (chainId !== sepolia.id) {
-        toast({
-          variant: "destructive",
-          title: "Wrong Network",
-          description: "Please switch to Sepolia network to continue.",
-        });
-        return;
-      }
-
-      const connector = connectors[0];
-      if (connector) {
-        await connect({ connector });
-      }
-    } catch (error) {
-      console.error("Failed to connect wallet:", error);
-      toast({
-        variant: "destructive",
-        title: "Connection Failed",
-        description: "Failed to connect wallet. Please try again.",
-      });
+  useEffect(() => {
+    if (isConnected && address) {
+      checkVoterEligibility();
     }
-  };
+  }, [isConnected, address]);
 
   useEffect(() => {
     if (isConnected && address && adminAddress) {
@@ -77,11 +75,28 @@ export const Navbar = () => {
 
       if (address.toLowerCase() === adminAddress.toLowerCase()) {
         navigate("/admin");
+        toast({
+          title: "Welcome Admin",
+          description: "You have been redirected to the admin dashboard.",
+        });
       } else {
-        navigate("/voter");
+        if (isVerifiedVoter) {
+          navigate("/voter");
+          toast({
+            title: "Welcome Voter",
+            description: "You have been verified as an eligible voter.",
+          });
+        } else {
+          navigate("/");
+          toast({
+            variant: "destructive",
+            title: "Not Verified",
+            description: "You are not verified to vote. Please contact the admin.",
+          });
+        }
       }
     }
-  }, [isConnected, address, chainId, navigate, adminAddress]);
+  }, [isConnected, address, chainId, navigate, adminAddress, isVerifiedVoter]);
 
   return (
     <nav className="bg-white dark:bg-gray-800 shadow-lg">
