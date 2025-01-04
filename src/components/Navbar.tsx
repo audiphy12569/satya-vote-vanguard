@@ -5,8 +5,7 @@ import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { sepolia } from "wagmi/chains";
 import { useChainId } from "wagmi";
-import { readContract } from '@wagmi/core';
-import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
+import { getAdminAddress, checkVoterStatus } from "@/utils/contractUtils";
 
 export const Navbar = () => {
   const { address, isConnected } = useAccount();
@@ -20,13 +19,8 @@ export const Navbar = () => {
 
   const fetchAdminAddress = async () => {
     try {
-      const data = await readContract({
-        abi: CONTRACT_ABI,
-        address: CONTRACT_ADDRESS as `0x${string}`,
-        functionName: 'admin',
-        chainId: sepolia.id,
-      });
-      setAdminAddress(data as string);
+      const data = await getAdminAddress();
+      setAdminAddress(data);
     } catch (error) {
       console.error("Failed to fetch admin address:", error);
       toast({
@@ -40,14 +34,8 @@ export const Navbar = () => {
   const checkVoterEligibility = async () => {
     if (!address) return;
     try {
-      const isEligible = await readContract({
-        abi: CONTRACT_ABI,
-        address: CONTRACT_ADDRESS as `0x${string}`,
-        functionName: 'voters',
-        args: [address],
-        chainId: sepolia.id,
-      });
-      setIsVerifiedVoter(Boolean(isEligible));
+      const isEligible = await checkVoterStatus(address);
+      setIsVerifiedVoter(isEligible);
     } catch (error) {
       console.error("Failed to check voter eligibility:", error);
       setIsVerifiedVoter(false);
