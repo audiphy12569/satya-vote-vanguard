@@ -3,14 +3,14 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { useAccount, useNetwork } from "wagmi";
+import { useAccount, useChainId } from "wagmi";
 import { checkVoterStatus } from "@/utils/contractUtils";
 import { CheckCircle2, XCircle, Loader2, RefreshCw } from "lucide-react";
 import { sepolia } from "wagmi/chains";
 
 export const VoterDashboard = () => {
   const { address, isConnected } = useAccount();
-  const { chain } = useNetwork();
+  const chainId = useChainId();
   const { toast } = useToast();
   const [isVerifiedVoter, setIsVerifiedVoter] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -23,7 +23,7 @@ export const VoterDashboard = () => {
       return;
     }
 
-    if (chain?.id !== sepolia.id) {
+    if (chainId !== sepolia.id) {
       setError("Please switch to Sepolia network");
       setIsLoading(false);
       return;
@@ -55,7 +55,7 @@ export const VoterDashboard = () => {
     if (isConnected && address) {
       checkVoterEligibility();
     }
-  }, [isConnected, address, chain?.id]);
+  }, [isConnected, address, chainId]);
 
   if (!isConnected) {
     return (
