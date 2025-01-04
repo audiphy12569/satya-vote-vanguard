@@ -12,36 +12,36 @@ contract VotingSystem {
     }
 
     struct Candidate {
-        uint256 id;
+        uint96 id; // Reduced from uint256 to uint96 since we won't have that many candidates
+        uint96 voteCount; // Reduced from uint256
+        bool isActive;
         string name;
         string party;
         string tagline;
         string logoIPFS;
-        uint256 voteCount;
-        bool isActive;
     }
 
     struct ElectionResult {
-        uint256 candidateId;
+        uint96 candidateId;
+        uint96 voteCount;
         string candidateName;
         string party;
-        uint256 voteCount;
     }
 
     struct ElectionHistory {
-        uint256 id;
-        uint256 startTime;
-        uint256 endTime;
-        uint256 totalVotes;
+        uint96 id;
+        uint96 totalVotes;
+        uint128 startTime;
+        uint128 endTime;
         ElectionResult[] results;
     }
 
     struct Election {
-        uint256 id;
-        uint256 startTime;
-        uint256 endTime;
+        uint96 id;
+        uint96 totalVotes;
+        uint128 startTime;
+        uint128 endTime;
         bool isActive;
-        uint256 totalVotes;
         mapping(address => bool) hasVoted;
     }
 
@@ -49,13 +49,12 @@ contract VotingSystem {
     mapping(address => bool) public approvedVoters;
     address[] public voterList;
     mapping(uint256 => Candidate) public candidates;
-    uint256 public candidateCount;
-    uint256 public currentElectionId;
+    uint96 public candidateCount;
+    uint96 public currentElectionId;
     mapping(uint256 => Election) public elections;
     mapping(uint256 => ElectionHistory) public electionHistories;
-    uint256 public totalElections;
+    uint96 public totalElections;
 
-    // Events
     event VoterApproved(address indexed voter);
     event VoterRemoved(address indexed voter);
     event AllVotersRemoved();
@@ -101,8 +100,10 @@ contract VotingSystem {
     }
 
     function removeAllVoters() external onlyAdmin noReentrant {
-        for (uint i = 0; i < voterList.length; i++) {
+        uint256 length = voterList.length; // Cache array length
+        for (uint256 i; i < length;) {
             approvedVoters[voterList[i]] = false;
+            unchecked { ++i; }
         }
         delete voterList;
         emit AllVotersRemoved();
@@ -115,7 +116,7 @@ contract VotingSystem {
         string calldata _logoIPFS
     ) external onlyAdmin noReentrant {
         unchecked {
-            candidateCount++;
+            ++candidateCount;
         }
         candidates[candidateCount] = Candidate({
             id: candidateCount,
@@ -147,25 +148,25 @@ contract VotingSystem {
                 if (block.timestamp <= currentElection.endTime) {
                     revert ElectionAlreadyActive();
                 }
-                // End previous election and store results
                 _endElection(currentElectionId);
             }
         }
         
         // Reset all candidate vote counts
-        for (uint256 i = 1; i <= candidateCount; i++) {
+        for (uint256 i = 1; i <= candidateCount;) {
             if (candidates[i].isActive) {
                 candidates[i].voteCount = 0;
             }
+            unchecked { ++i; }
         }
         
         unchecked {
-            currentElectionId++;
-            totalElections++;
+            ++currentElectionId;
+            ++totalElections;
         }
         
-        uint256 startTime = block.timestamp;
-        uint256 endTime = startTime + (_durationInMinutes * 1 minutes);
+        uint128 startTime = uint128(block.timestamp);
+        uint128 endTime = uint128(startTime + (_durationInMinutes * 1 minutes));
         
         Election storage newElection = elections[currentElectionId];
         newElection.id = currentElectionId;
@@ -181,21 +182,22 @@ contract VotingSystem {
         Election storage election = elections[_electionId];
         ElectionHistory storage history = electionHistories[_electionId];
         
-        history.id = _electionId;
+        history.id = uint96(_electionId);
         history.startTime = election.startTime;
         history.endTime = election.endTime;
         history.totalVotes = election.totalVotes;
         
         // Store results for each active candidate
-        for (uint256 i = 1; i <= candidateCount; i++) {
+        for (uint256 i = 1; i <= candidateCount;) {
             if (candidates[i].isActive) {
                 history.results.push(ElectionResult({
-                    candidateId: candidates[i].id,
+                    candidateId: uint96(i),
                     candidateName: candidates[i].name,
                     party: candidates[i].party,
                     voteCount: candidates[i].voteCount
                 }));
             }
+            unchecked { ++i; }
         }
         
         election.isActive = false;
@@ -218,20 +220,21 @@ contract VotingSystem {
 
         election.hasVoted[msg.sender] = true;
         unchecked {
-            candidates[_candidateId].voteCount++;
-            election.totalVotes++;
+            ++candidates[_candidateId].voteCount;
+            ++election.totalVotes;
         }
         
         emit VoteCast(msg.sender, _candidateId, currentElectionId);
     }
 
     function getActiveCandidateCount() public view returns (uint256 count) {
-        for (uint256 i = 1; i <= candidateCount; i++) {
+        for (uint256 i = 1; i <= candidateCount;) {
             if (candidates[i].isActive) {
                 unchecked {
-                    count++;
+                    ++count;
                 }
             }
+            unchecked { ++i; }
         }
     }
 
