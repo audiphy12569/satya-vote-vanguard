@@ -1,39 +1,31 @@
 import { Button } from "@/components/ui/button";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { useNavigate } from "react-router-dom";
-import { walletConnect } from "wagmi/connectors";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { sepolia } from "wagmi/chains";
-import { useChainId, useConfig } from "wagmi";
-import { createPublicClient, http, getContract, type PublicClient } from "viem";
+import { useChainId } from "wagmi";
+import { readContract } from '@wagmi/core';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 
 export const Navbar = () => {
   const { address, isConnected } = useAccount();
-  const { connect } = useConnect();
+  const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
   const chainId = useChainId();
-  const config = useConfig();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [adminAddress, setAdminAddress] = useState<string | null>(null);
 
   const fetchAdminAddress = async () => {
     try {
-      const client = createPublicClient({
-        chain: sepolia,
-        transport: http()
-      });
-
-      const contract = getContract({
+      const admin = await readContract({
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
-        client,
+        functionName: 'admin',
       });
 
-      const admin = await contract.read.admin();
-      setAdminAddress(admin);
+      setAdminAddress(admin as string);
     } catch (error) {
       console.error("Failed to fetch admin address:", error);
       toast({
@@ -56,15 +48,13 @@ export const Navbar = () => {
           title: "Wrong Network",
           description: "Please switch to Sepolia network to continue.",
         });
-        await config.chains[0].id === sepolia.id;
         return;
       }
 
-      await connect({ 
-        connector: walletConnect({ 
-          projectId: import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID 
-        })
-      });
+      const connector = connectors[0];
+      if (connector) {
+        await connect({ connector });
+      }
     } catch (error) {
       console.error("Failed to connect wallet:", error);
       toast({
@@ -86,7 +76,6 @@ export const Navbar = () => {
         return;
       }
 
-      // Check if connected address is admin
       if (address.toLowerCase() === adminAddress.toLowerCase()) {
         navigate("/admin");
       } else {
