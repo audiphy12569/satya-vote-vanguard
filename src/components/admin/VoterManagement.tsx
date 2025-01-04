@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { writeContract, readContract } from '@wagmi/core';
+import { writeContract, readContract, getPublicClient } from '@wagmi/core';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 import { Loader2 } from "lucide-react";
 import { config } from "@/config/web3";
@@ -71,9 +71,8 @@ export const VoterManagement = () => {
         variant: "default",
       });
 
-      // Wait for transaction confirmation
-      const provider = await config.getPublicClient();
-      await provider.waitForTransactionReceipt({ hash });
+      const publicClient = await getPublicClient(config);
+      await publicClient.waitForTransactionReceipt({ hash });
       
       toast({
         title: "Transaction Successful",
@@ -112,9 +111,8 @@ export const VoterManagement = () => {
         variant: "default",
       });
 
-      // Wait for transaction confirmation
-      const provider = await config.getPublicClient();
-      await provider.waitForTransactionReceipt({ hash });
+      const publicClient = await getPublicClient(config);
+      await publicClient.waitForTransactionReceipt({ hash });
       
       toast({
         title: "Transaction Successful",
