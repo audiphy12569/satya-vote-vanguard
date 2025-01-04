@@ -1,7 +1,7 @@
 import { readContract } from '@wagmi/core';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 import { config } from "@/config/web3";
-import type { ElectionHistory } from "@/utils/electionUtils";
+import type { ElectionHistory } from "@/types/election";
 
 export const fetchElectionHistory = async (): Promise<ElectionHistory[]> => {
   try {

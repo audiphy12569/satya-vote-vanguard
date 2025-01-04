@@ -1,14 +1,19 @@
 import { useEffect, useState } from "react";
-import { writeContract, getPublicClient } from '@wagmi/core';
+import { writeContract, getPublicClient, readContract } from '@wagmi/core';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 import { config } from "@/config/web3";
+import { sepolia } from "wagmi/chains";
 import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import type { Candidate } from "@/types/election";
 
 export const CandidateList = () => {
   const { toast } = useToast();
-  const [candidates, setCandidates] = useState<any[]>([]);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [removingId, setRemovingId] = useState<number | null>(null);
-  const [address, setAddress] = useState<string | null>(null); // Assume you have a way to get the user's address
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchCandidates = async () => {
     try {
@@ -33,11 +38,19 @@ export const CandidateList = () => {
           tagline: candidate[2],
           logoIPFS: candidate[3],
           voteCount: candidate[4],
+          isActive: true,
         });
       }
       setCandidates(candidatesData);
     } catch (error) {
       console.error("Failed to fetch candidates:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch candidates",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -46,8 +59,6 @@ export const CandidateList = () => {
   }, []);
 
   const handleRemove = async (id: number) => {
-    if (!address) return;
-
     try {
       setRemovingId(id);
       const result = await writeContract(config, {
@@ -56,12 +67,11 @@ export const CandidateList = () => {
         functionName: 'removeCandidate',
         args: [BigInt(id)],
         chain: sepolia,
-        account: address,
       });
 
       const publicClient = await getPublicClient(config);
       await publicClient.waitForTransactionReceipt({ 
-        hash: result.hash as `0x${string}` 
+        hash: result 
       });
 
       toast({
@@ -82,26 +92,54 @@ export const CandidateList = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Candidate List</CardTitle>
+        </CardHeader>
+        <CardContent className="flex justify-center">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <div>
-      <h2 className="text-lg font-bold">Candidate List</h2>
-      <ul>
-        {candidates.map(candidate => (
-          <li key={candidate.id} className="flex justify-between items-center">
-            <div>
-              <p>{candidate.name} ({candidate.party})</p>
-              <p>{candidate.tagline}</p>
-            </div>
-            <button 
-              onClick={() => handleRemove(candidate.id)} 
-              disabled={removingId === candidate.id}
-              className="text-red-500"
-            >
-              Remove
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Candidate List</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {candidates.length === 0 ? (
+          <p className="text-center text-gray-500">No candidates added yet</p>
+        ) : (
+          <div className="space-y-4">
+            {candidates.map(candidate => (
+              <div key={candidate.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <h3 className="font-medium">{candidate.name}</h3>
+                  <p className="text-sm text-gray-500">{candidate.party}</p>
+                  {candidate.tagline && (
+                    <p className="text-sm text-gray-600 mt-1">{candidate.tagline}</p>
+                  )}
+                </div>
+                <Button 
+                  variant="destructive"
+                  onClick={() => handleRemove(candidate.id)} 
+                  disabled={removingId === candidate.id}
+                >
+                  {removingId === candidate.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    'Remove'
+                  )}
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };

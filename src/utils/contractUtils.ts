@@ -13,7 +13,7 @@ type ContractFunction =
 
 export const writeContractWithConfirmation = async (
   functionName: ContractFunction,
-  args: readonly unknown[],
+  args: any[],
   address?: `0x${string}`
 ) => {
   try {
