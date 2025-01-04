@@ -1,27 +1,43 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface VoterActionsProps {
-  onRemoveAll: () => void;
+  onApprove: (address: string) => Promise<void>;
+  onRemoveAll: () => Promise<void>;
   isLoading: boolean;
 }
 
-export const VoterActions = ({ onRemoveAll, isLoading }: VoterActionsProps) => {
+export const VoterActions = ({ onApprove, onRemoveAll, isLoading }: VoterActionsProps) => {
+  const [voterAddress, setVoterAddress] = useState("");
+
+  const handleApprove = async () => {
+    if (!voterAddress) return;
+    await onApprove(voterAddress);
+    setVoterAddress("");
+  };
+
   return (
-    <div className="mb-4">
+    <div className="space-y-4 mb-6">
+      <div className="flex gap-4">
+        <Input
+          placeholder="Enter voter address"
+          value={voterAddress}
+          onChange={(e) => setVoterAddress(e.target.value)}
+          disabled={isLoading}
+        />
+        <Button 
+          onClick={handleApprove}
+          disabled={!voterAddress || isLoading}
+        >
+          Add Voter
+        </Button>
+      </div>
+
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button variant="destructive" disabled={isLoading}>
+          <Button variant="destructive" className="w-full" disabled={isLoading}>
             Remove All Voters
           </Button>
         </AlertDialogTrigger>
@@ -29,14 +45,12 @@ export const VoterActions = ({ onRemoveAll, isLoading }: VoterActionsProps) => {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. All voters will be removed from the system.
+              This action cannot be undone. This will permanently remove all voters from the system.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={onRemoveAll}>
-              Remove All
-            </AlertDialogAction>
+            <AlertDialogAction onClick={onRemoveAll}>Continue</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

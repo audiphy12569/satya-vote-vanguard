@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { readContract } from '@wagmi/core';
+import { readContract, writeContract, getPublicClient } from '@wagmi/core';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 import { config } from "@/config/web3";
 import { writeContractWithConfirmation } from "@/utils/contractUtils";
@@ -43,7 +43,7 @@ export const VoterManagement = () => {
   const handleApproveVoter = async (voterAddress: string) => {
     try {
       setIsLoading(true);
-      await writeContractWithConfirmation(
+      const { hash } = await writeContractWithConfirmation(
         'approveVoter',
         [voterAddress as `0x${string}`],
         address
@@ -70,7 +70,7 @@ export const VoterManagement = () => {
   const handleRemoveVoter = async (voterAddress: string) => {
     try {
       setIsLoading(true);
-      await writeContractWithConfirmation(
+      const { hash } = await writeContractWithConfirmation(
         'removeVoter',
         [voterAddress as `0x${string}`],
         address
@@ -97,7 +97,7 @@ export const VoterManagement = () => {
   const handleRemoveAllVoters = async () => {
     try {
       setIsLoading(true);
-      await writeContractWithConfirmation(
+      const { hash } = await writeContractWithConfirmation(
         'removeAllVoters',
         [],
         address
@@ -127,7 +127,11 @@ export const VoterManagement = () => {
         <CardTitle>Voter Management</CardTitle>
       </CardHeader>
       <CardContent>
-        <VoterActions onRemoveAll={handleRemoveAllVoters} isLoading={isLoading} />
+        <VoterActions 
+          onApprove={handleApproveVoter}
+          onRemoveAll={handleRemoveAllVoters} 
+          isLoading={isLoading} 
+        />
         <VoterList 
           voters={voters}
           onRemove={handleRemoveVoter}
