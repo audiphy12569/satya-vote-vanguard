@@ -130,7 +130,6 @@ export const VoterManagement = () => {
         <VoterActions onRemoveAll={handleRemoveAllVoters} isLoading={isLoading} />
         <VoterList 
           voters={voters}
-          onApprove={handleApproveVoter}
           onRemove={handleRemoveVoter}
           isLoading={isLoading}
         />

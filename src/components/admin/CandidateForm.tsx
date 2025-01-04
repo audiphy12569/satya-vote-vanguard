@@ -63,7 +63,7 @@ export const CandidateForm = ({ onCandidateAdded }: { onCandidateAdded: () => Pr
         ],
         chain: sepolia,
         account: address,
-      });
+      }) as { hash: `0x${string}` };
 
       toast({
         title: "Transaction Submitted",

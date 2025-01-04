@@ -25,6 +25,26 @@ export interface ElectionHistory {
   results: ElectionResult[];
 }
 
+export const writeContractWithConfirmation = async (
+  functionName: string,
+  args: readonly unknown[],
+  account: `0x${string}` | undefined
+) => {
+  const { hash } = await writeContract(config, {
+    address: CONTRACT_ADDRESS as `0x${string}`,
+    abi: CONTRACT_ABI,
+    functionName,
+    args,
+    chain: sepolia,
+    account,
+  }) as { hash: `0x${string}` };
+
+  const publicClient = await getPublicClient(config);
+  await publicClient.waitForTransactionReceipt({ hash });
+  
+  return hash;
+};
+
 export const getElectionStatus = async (): Promise<ElectionStatus> => {
   try {
     const data = await readContract(config, {
@@ -122,28 +142,3 @@ type ContractFunction =
   | "removeVoter" 
   | "startElection" 
   | "vote";
-
-export const writeContractWithConfirmation = async (
-  functionName: ContractFunction,
-  args: any[],
-  account: `0x${string}` | undefined
-) => {
-  try {
-    const { hash } = await writeContract(config, {
-      address: CONTRACT_ADDRESS as `0x${string}`,
-      abi: CONTRACT_ABI,
-      functionName,
-      args,
-      chain: sepolia,
-      account,
-    });
-
-    const publicClient = await getPublicClient(config);
-    await publicClient.waitForTransactionReceipt({ hash });
-    
-    return hash;
-  } catch (error) {
-    console.error(`Failed to execute ${functionName}:`, error);
-    throw error;
-  }
-};

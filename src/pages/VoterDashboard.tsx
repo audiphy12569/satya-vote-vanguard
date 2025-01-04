@@ -144,7 +144,7 @@ export const VoterDashboard = () => {
         args: [BigInt(candidateId)],
         chain: sepolia,
         account: address,
-      });
+      }) as { hash: `0x${string}` };
 
       toast({
         title: "Vote Submitted",

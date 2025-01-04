@@ -1,4 +1,4 @@
-import { readContract, writeContract, getPublicClient } from '@wagmi/core';
+import { writeContract, getPublicClient } from '@wagmi/core';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 import { config } from "@/config/web3";
 import { sepolia } from "wagmi/chains";
@@ -30,28 +30,19 @@ export const checkVoterStatus = async (address: string) => {
   }
 };
 
-type ContractFunction = 
-  | "addCandidate" 
-  | "approveVoter" 
-  | "removeAllVoters" 
-  | "removeCandidate" 
-  | "removeVoter" 
-  | "startElection" 
-  | "vote";
-
 export const writeContractWithConfirmation = async (
-  functionName: ContractFunction,
-  args: any[],
+  functionName: string,
+  args: readonly unknown[],
   account: `0x${string}` | undefined
 ) => {
   const { hash } = await writeContract(config, {
     address: CONTRACT_ADDRESS as `0x${string}`,
     abi: CONTRACT_ABI,
-    functionName: functionName,
-    args: args,
+    functionName,
+    args,
     chain: sepolia,
     account,
-  });
+  }) as { hash: `0x${string}` };
 
   const publicClient = await getPublicClient(config);
   await publicClient.waitForTransactionReceipt({ hash });

@@ -40,7 +40,7 @@ export const CandidateList = ({ candidates, isLoading, onCandidateDeleted }: Can
         args: [BigInt(id)],
         chain: sepolia,
         account: address,
-      });
+      }) as { hash: `0x${string}` };
 
       toast({
         title: "Transaction Submitted",

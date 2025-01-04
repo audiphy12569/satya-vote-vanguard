@@ -1,32 +1,38 @@
-import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
-interface VoterListProps {
+export interface VoterListProps {
   voters: string[];
-  onRemove: (address: string) => void;
   isLoading: boolean;
+  onRemove: (voterAddress: string) => Promise<void>;
 }
 
-export const VoterList = ({ voters, onRemove, isLoading }: VoterListProps) => {
+export const VoterList = ({ voters, isLoading, onRemove }: VoterListProps) => {
   if (isLoading) {
-    return <p>Loading...</p>;
+    return (
+      <div className="flex justify-center">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
+
+  if (voters.length === 0) {
+    return (
+      <Alert>
+        <AlertDescription>
+          No voters found.
+        </AlertDescription>
+      </Alert>
+    );
   }
 
   return (
-    <ul className="space-y-4">
+    <div className="space-y-2">
       {voters.map((voter) => (
-        <li key={voter} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-          <span className="font-mono text-sm">{voter}</span>
-          <div className="space-x-2">
-            <Button 
-              onClick={() => onRemove(voter)} 
-              variant="destructive"
-              size="sm"
-            >
-              Remove
-            </Button>
-          </div>
-        </li>
+        <div key={voter} className="p-3 border rounded flex justify-between items-center">
+          <span className="font-mono">{voter}</span>
+        </div>
       ))}
-    </ul>
+    </div>
   );
 };
