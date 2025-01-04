@@ -133,12 +133,3 @@ export const getActiveCandidateCount = async (): Promise<number> => {
     throw error;
   }
 };
-
-type ContractFunction = 
-  | "addCandidate" 
-  | "approveVoter" 
-  | "removeAllVoters" 
-  | "removeCandidate" 
-  | "removeVoter" 
-  | "startElection" 
-  | "vote";
