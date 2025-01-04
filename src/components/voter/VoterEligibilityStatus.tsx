@@ -17,16 +17,16 @@ export const VoterEligibilityStatus = ({
   onRefresh,
 }: VoterEligibilityStatusProps) => {
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className="w-full max-w-2xl mx-auto shadow-lg animate-fade-in">
       <CardHeader>
-        <CardTitle className="text-2xl text-center">
+        <CardTitle className="text-2xl font-semibold">
           Voter Eligibility Status
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {isLoading ? (
           <div className="flex items-center justify-center p-4">
-            <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <span className="ml-2 text-gray-600">Checking eligibility...</span>
           </div>
         ) : error ? (
@@ -36,10 +36,10 @@ export const VoterEligibilityStatus = ({
         ) : (
           <div className="space-y-4">
             <div
-              className={`p-6 rounded-lg border ${
+              className={`p-6 rounded-lg border transition-all duration-300 ${
                 isVerifiedVoter
-                  ? "bg-green-50 border-green-200"
-                  : "bg-red-50 border-red-200"
+                  ? "bg-green-50 border-green-200 hover:bg-green-100"
+                  : "bg-red-50 border-red-200 hover:bg-red-100"
               }`}
             >
               <div className="flex items-center justify-center gap-3">
@@ -69,7 +69,11 @@ export const VoterEligibilityStatus = ({
             </div>
 
             <div className="flex justify-center">
-              <Button onClick={onRefresh} variant="outline" className="gap-2">
+              <Button 
+                onClick={onRefresh} 
+                variant="outline" 
+                className="gap-2 btn-hover"
+              >
                 <RefreshCw className="h-4 w-4" />
                 Refresh Status
               </Button>

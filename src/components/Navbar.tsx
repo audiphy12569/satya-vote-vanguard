@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { sepolia } from "wagmi/chains";
 import { useChainId } from "wagmi";
 import { getAdminAddress, checkVoterStatus } from "@/utils/contractUtils";
+import { Users, UserPlus, Vote } from "lucide-react";
 
 export const Navbar = () => {
   const { address, isConnected } = useAccount();
@@ -14,6 +15,7 @@ export const Navbar = () => {
   const chainId = useChainId();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const [adminAddress, setAdminAddress] = useState<string | null>(null);
   const [isVerifiedVoter, setIsVerifiedVoter] = useState<boolean>(false);
 
@@ -90,21 +92,50 @@ export const Navbar = () => {
     }
   }, [isConnected, address, chainId, navigate, adminAddress, isVerifiedVoter]);
 
+  const isActive = (path: string) => location.pathname === path;
+
   return (
-    <nav className="bg-white dark:bg-gray-800 shadow-lg">
+    <nav className="bg-white dark:bg-gray-900 shadow-lg animate-fade-in">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <span 
-              className="text-2xl font-bold text-purple-800 dark:text-purple-400 cursor-pointer" 
+              className="text-2xl font-bold text-gray-900 dark:text-white cursor-pointer hover-scale"
               onClick={() => navigate("/")}
             >
               Satya Vote
             </span>
+            
+            {isConnected && adminAddress && address?.toLowerCase() === adminAddress.toLowerCase() && (
+              <div className="ml-8 hidden md:flex space-x-4">
+                <button 
+                  onClick={() => navigate("/admin/voters")}
+                  className={`nav-link flex items-center space-x-2 ${isActive("/admin/voters") ? "active-nav-link" : ""}`}
+                >
+                  <Users className="w-4 h-4" />
+                  <span>Voters</span>
+                </button>
+                <button 
+                  onClick={() => navigate("/admin/candidates")}
+                  className={`nav-link flex items-center space-x-2 ${isActive("/admin/candidates") ? "active-nav-link" : ""}`}
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>Candidates</span>
+                </button>
+                <button 
+                  onClick={() => navigate("/admin/election")}
+                  className={`nav-link flex items-center space-x-2 ${isActive("/admin/election") ? "active-nav-link" : ""}`}
+                >
+                  <Vote className="w-4 h-4" />
+                  <span>Election</span>
+                </button>
+              </div>
+            )}
           </div>
+          
           <div className="flex items-center space-x-4">
             {chainId !== sepolia.id && (
-              <span className="text-sm text-red-500">
+              <span className="text-sm text-red-500 animate-pulse">
                 Wrong Network
               </span>
             )}
@@ -115,6 +146,7 @@ export const Navbar = () => {
                 </span>
                 <Button
                   variant="outline"
+                  className="btn-hover"
                   onClick={() => {
                     disconnect();
                     navigate("/");
