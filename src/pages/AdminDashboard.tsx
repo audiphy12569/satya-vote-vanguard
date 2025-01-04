@@ -1,85 +1,54 @@
-import { VoterManagement } from "@/components/admin/VoterManagement";
-import { CandidateManagement } from "@/components/admin/CandidateManagement";
-import { ElectionControl } from "@/components/admin/ElectionControl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useState, useEffect } from "react";
-import { ElectionResults } from "@/components/ElectionResults";
-import { ElectionTimer } from "@/components/ElectionTimer";
-import { getElectionStatus } from "@/utils/electionUtils";
-import { fetchElectionHistory } from "@/utils/electionHistoryUtils";
-import type { ElectionHistory } from "@/utils/electionUtils";
+import { Users, UserPlus, Vote } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const AdminDashboard = () => {
-  const [isElectionActive, setIsElectionActive] = useState(false);
-  const [pastElections, setPastElections] = useState<ElectionHistory[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [electionStatus, setElectionStatus] = useState<any>(null);
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchElectionData = async () => {
-      try {
-        setIsLoading(true);
-        const status = await getElectionStatus();
-        setIsElectionActive(status.isActive);
-        setElectionStatus(status);
-
-        const elections = await fetchElectionHistory();
-        setPastElections(elections);
-      } catch (error) {
-        console.error("Failed to fetch election data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchElectionData();
-    const interval = setInterval(fetchElectionData, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  const adminCards = [
+    {
+      title: "Voter Management",
+      description: "Approve new voters and manage existing ones",
+      icon: Users,
+      path: "/admin/voters",
+    },
+    {
+      title: "Candidate Management",
+      description: "Add and remove election candidates",
+      icon: UserPlus,
+      path: "/admin/candidates",
+    },
+    {
+      title: "Election Control",
+      description: "Start elections and view results",
+      icon: Vote,
+      path: "/admin/election",
+    },
+  ];
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <h1 className="text-3xl font-bold text-purple-800 dark:text-purple-400">Admin Dashboard</h1>
+    <div className="container mx-auto p-4 animate-fade-in">
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
+        Admin Dashboard
+      </h1>
       
-      {isElectionActive && electionStatus?.endTime && (
-        <ElectionTimer endTime={Number(electionStatus.endTime)} />
-      )}
-
-      <div className="grid md:grid-cols-2 gap-6">
-        <VoterManagement />
-        <CandidateManagement />
-        <ElectionControl />
+      <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        {adminCards.map((card) => (
+          <Card 
+            key={card.path}
+            className="hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
+            onClick={() => navigate(card.path)}
+          >
+            <CardHeader>
+              <card.icon className="w-8 h-8 mb-2 text-gray-700 dark:text-gray-300" />
+              <CardTitle className="text-xl">{card.title}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 dark:text-gray-400">{card.description}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Election History</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {isLoading ? (
-            <Alert>
-              <AlertDescription>
-                Loading election history...
-              </AlertDescription>
-            </Alert>
-          ) : pastElections.length === 0 ? (
-            <Alert>
-              <AlertDescription>
-                No past elections found
-              </AlertDescription>
-            </Alert>
-          ) : (
-            pastElections.map((election) => (
-              <ElectionResults 
-                key={String(election.id)} 
-                election={election} 
-                isLive={isElectionActive && Number(election.id) === pastElections.length}
-              />
-            ))
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 };

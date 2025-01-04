@@ -95,7 +95,7 @@ export const Navbar = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <nav className="bg-white dark:bg-gray-900 shadow-lg animate-fade-in">
+    <nav className="bg-white dark:bg-gray-900 shadow-lg animate-fade-in border-b border-gray-200 dark:border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
@@ -146,7 +146,7 @@ export const Navbar = () => {
                 </span>
                 <Button
                   variant="outline"
-                  className="btn-hover"
+                  className="btn-hover bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700"
                   onClick={() => {
                     disconnect();
                     navigate("/");
