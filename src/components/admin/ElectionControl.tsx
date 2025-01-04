@@ -2,63 +2,15 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { getActiveCandidateCount, getElectionStatus, getElectionHistory, getCurrentElectionId } from "@/utils/electionUtils";
+import { getActiveCandidateCount, getElectionStatus } from "@/utils/electionUtils";
 import { writeContractWithConfirmation } from "@/utils/contractUtils";
 import { useAccount } from 'wagmi';
 
 export const ElectionControl = () => {
   const { toast } = useToast();
   const [isStarting, setIsStarting] = useState(false);
-  const [isEnding, setIsEnding] = useState(false);
   const [duration, setDuration] = useState<number>(60);
   const { address } = useAccount();
-
-  const handleEndCurrentElection = async () => {
-    try {
-      setIsEnding(true);
-      const currentStatus = await getElectionStatus();
-      
-      if (!currentStatus.isActive) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "No active election to end",
-        });
-        return;
-      }
-
-      // End the current election by calling startElection with 0 duration
-      await writeContractWithConfirmation(
-        'startElection',
-        [0n], // 0 duration to trigger election end
-        address
-      );
-      
-      // Get the results of the ended election
-      const currentElectionId = await getCurrentElectionId();
-      if (currentElectionId > 0) {
-        const results = await getElectionHistory(currentElectionId);
-        console.log("Election ended, results:", results);
-      }
-      
-      toast({
-        title: "Success",
-        description: "Election ended successfully",
-      });
-
-      // Refresh election status
-      await getElectionStatus();
-    } catch (error) {
-      console.error("Failed to end election:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to end election",
-      });
-    } finally {
-      setIsEnding(false);
-    }
-  };
 
   const handleStartElection = async () => {
     try {
@@ -86,69 +38,27 @@ export const ElectionControl = () => {
       // Check current election status first
       const currentStatus = await getElectionStatus();
       
-      // If there's an active election
-      if (currentStatus.isActive) {
-        const now = Date.now();
-        const endTime = Number(currentStatus.endTime) * 1000;
-        
-        // If the election has ended but is still marked as active
-        if (now >= endTime) {
-          try {
-            // End the current election by calling startElection with 0 duration
-            // This will trigger _endElection in the smart contract
-            await writeContractWithConfirmation(
-              'startElection',
-              [0n], // 0 duration to trigger election end
-              address
-            );
-            
-            // Get the results of the ended election
-            const currentElectionId = await getCurrentElectionId();
-            if (currentElectionId > 0) {
-              const results = await getElectionHistory(currentElectionId);
-              console.log("Previous election ended, results:", results);
-            }
-            
-            // Now start the new election
-            await writeContractWithConfirmation(
-              'startElection',
-              [BigInt(duration)],
-              address
-            );
-            
-            toast({
-              title: "Success",
-              description: "Previous election ended and new election started successfully",
-            });
-          } catch (error) {
-            console.error("Failed to end previous election:", error);
-            toast({
-              variant: "destructive",
-              title: "Error",
-              description: "Failed to end previous election",
-            });
-          }
-        } else {
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Cannot start new election while current election is active",
-          });
-          return;
-        }
-      } else {
-        // No active election, start a new one
-        await writeContractWithConfirmation(
-          'startElection',
-          [BigInt(duration)],
-          address
-        );
-        
+      // If there's an active election that hasn't ended yet
+      if (currentStatus.isActive && Date.now() / 1000 <= Number(currentStatus.endTime)) {
         toast({
-          title: "Success",
-          description: "Election started successfully",
+          variant: "destructive",
+          title: "Error",
+          description: "Cannot start new election while current election is active",
         });
+        return;
       }
+
+      // Start new election
+      await writeContractWithConfirmation(
+        'startElection',
+        [BigInt(duration)],
+        address
+      );
+      
+      toast({
+        title: "Success",
+        description: "Election started successfully",
+      });
       
       // Refresh election status
       await getElectionStatus();
@@ -178,13 +88,6 @@ export const ElectionControl = () => {
         />
         <Button onClick={handleStartElection} disabled={isStarting}>
           {isStarting ? "Starting..." : "Start Election"}
-        </Button>
-        <Button 
-          onClick={handleEndCurrentElection} 
-          disabled={isEnding}
-          variant="destructive"
-        >
-          {isEnding ? "Ending..." : "End Current Election"}
         </Button>
       </div>
     </div>

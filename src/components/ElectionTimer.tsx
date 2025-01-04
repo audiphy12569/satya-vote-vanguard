@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { getElectionStatus } from "@/utils/electionUtils";
 
 interface ElectionTimerProps {
   endTime: number;
@@ -10,13 +11,15 @@ export const ElectionTimer = ({ endTime }: ElectionTimerProps) => {
   const [isEnded, setIsEnded] = useState(false);
 
   useEffect(() => {
-    const updateTimer = () => {
+    const updateTimer = async () => {
       const now = Math.floor(Date.now() / 1000);
       const diff = endTime - now;
 
       if (diff <= 0) {
         setTimeLeft("Election ended");
         setIsEnded(true);
+        // Check election status to ensure it's properly updated
+        await getElectionStatus();
         return;
       }
 

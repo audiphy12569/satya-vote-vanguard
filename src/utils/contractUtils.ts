@@ -31,21 +31,23 @@ export const checkVoterStatus = async (address: string) => {
 };
 
 export const writeContractWithConfirmation = async (
-  functionName: "addCandidate" | "approveVoter" | "removeAllVoters" | "removeCandidate" | "removeVoter" | "startElection" | "vote",
+  functionName: "addCandidate" | "approveVoter" | "removeAllVoters" | "removeCandidate" | "startElection" | "vote",
   args: readonly (string | bigint | `0x${string}`)[], 
   account: `0x${string}` | undefined
 ) => {
-  const result = await writeContract(config, {
+  if (!account) throw new Error("Account is required");
+
+  const { hash } = await writeContract(config, {
     address: CONTRACT_ADDRESS as `0x${string}`,
     abi: CONTRACT_ABI,
     functionName,
     args: args as any,
     chain: sepolia,
     account,
-  }) as { hash: `0x${string}` };
+  });
 
   const publicClient = await getPublicClient(config);
-  await publicClient.waitForTransactionReceipt({ hash: result.hash });
+  await publicClient.waitForTransactionReceipt({ hash });
   
-  return result;
+  return { hash };
 };
