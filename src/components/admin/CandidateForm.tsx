@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAccount } from "wagmi";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { writeContract, getPublicClient } from '@wagmi/core';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
@@ -17,9 +18,15 @@ const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
   party: z.string().min(1, "Party is required"),
   tagline: z.string().optional(),
-  logo: z.instanceof(File).refine(file => file.size <= 2 * 1024 * 1024, {
-    message: "File size must be less than 2MB",
-  }),
+  logo: z.instanceof(File, { message: "Please select a valid logo file" })
+    .refine(
+      (file) => file.size <= 2 * 1024 * 1024,
+      "File size must be less than 2MB"
+    )
+    .refine(
+      (file) => ['image/jpeg', 'image/png', 'image/gif'].includes(file.type),
+      "Only .jpg, .png, and .gif formats are supported"
+    ),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -28,7 +35,9 @@ export const CandidateForm = ({ onSuccess }: { onSuccess?: () => void }) => {
   const { address } = useAccount();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const form = useForm<FormData>();
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+  });
 
   const handleSubmit = async (data: FormData) => {
     if (!address) return;
@@ -36,13 +45,7 @@ export const CandidateForm = ({ onSuccess }: { onSuccess?: () => void }) => {
     try {
       setIsSubmitting(true);
       
-      // Ensure we have a valid file before uploading
-      const logoFile = data.logo;
-      if (!logoFile || !(logoFile instanceof File)) {
-        throw new Error('Please select a valid logo file');
-      }
-
-      const ipfsHash = await uploadToIPFS(logoFile);
+      const ipfsHash = await uploadToIPFS(data.logo);
       
       const result = await writeContract(config, {
         address: CONTRACT_ADDRESS as `0x${string}`,
@@ -108,7 +111,7 @@ export const CandidateForm = ({ onSuccess }: { onSuccess?: () => void }) => {
               id="logo" 
               type="file" 
               accept="image/*"
-              {...form.register("logo")} 
+              {...form.register("logo")}
             />
             {form.formState.errors.logo && (
               <p className="text-sm text-red-500">{form.formState.errors.logo.message}</p>
