@@ -5,35 +5,25 @@ import { sepolia } from "wagmi/chains";
 
 export const getAdminAddress = async () => {
   try {
-    if (!CONTRACT_ADDRESS || CONTRACT_ADDRESS === "0x123...") {
-      throw new Error("Invalid contract address in environment variables");
-    }
-    
-    const data = await readContract(config, {
+    return await readContract(config, {
       address: CONTRACT_ADDRESS as `0x${string}`,
       abi: CONTRACT_ABI,
       functionName: 'admin',
     });
-    return data as string;
   } catch (error) {
-    console.error("Error fetching admin address:", error);
+    console.error("Error getting admin address:", error);
     throw error;
   }
 };
 
 export const checkVoterStatus = async (address: string) => {
   try {
-    if (!CONTRACT_ADDRESS || CONTRACT_ADDRESS === "0x123...") {
-      throw new Error("Invalid contract address in environment variables");
-    }
-
-    const data = await readContract(config, {
+    return await readContract(config, {
       address: CONTRACT_ADDRESS as `0x${string}`,
       abi: CONTRACT_ABI,
       functionName: 'approvedVoters',
       args: [address as `0x${string}`],
     });
-    return Boolean(data);
   } catch (error) {
     console.error("Error checking voter status:", error);
     throw error;
@@ -41,20 +31,21 @@ export const checkVoterStatus = async (address: string) => {
 };
 
 export const writeContractWithConfirmation = async (
-  functionName: string,
-  args: unknown[],
-  contractAddress: string,
+  functionName: "addCandidate" | "approveVoter" | "removeAllVoters" | "removeCandidate" | "removeVoter" | "startElection" | "vote",
+  args: Parameters<typeof CONTRACT_ABI[number]>[number],
+  account: `0x${string}` | undefined
 ) => {
   const { hash } = await writeContract(config, {
-    address: contractAddress as `0x${string}`,
+    address: CONTRACT_ADDRESS as `0x${string}`,
     abi: CONTRACT_ABI,
     functionName,
     args,
     chain: sepolia,
+    account,
   });
 
   const publicClient = await getPublicClient(config);
-  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+  await publicClient.waitForTransactionReceipt({ hash });
   
-  return receipt;
+  return hash;
 };

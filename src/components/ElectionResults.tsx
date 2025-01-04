@@ -21,7 +21,7 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
   };
 
   return (
-    <Card>
+    <Card className="mb-4">
       <CardHeader>
         <CardTitle className="text-lg">
           {isLive ? (
@@ -50,8 +50,11 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
                 result.voteCount;
 
               return (
-                <div key={String(result.candidateId)} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <div className="flex items-center space-x-2">
+                <div 
+                  key={String(result.candidateId)} 
+                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100"
+                >
+                  <div className="flex items-center space-x-3">
                     <Medal className={`h-5 w-5 ${position.color}`} />
                     <div>
                       <p className="font-medium">{result.candidateName}</p>
