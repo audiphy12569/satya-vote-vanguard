@@ -17,6 +17,8 @@ export const config = createConfig({
       metadata: {
         name: 'Satya Vote',
         description: 'Secure, Transparent, and Decentralized Voting System',
+        url: 'https://satyavote.com', // Replace with your actual URL
+        icons: ['https://avatars.githubusercontent.com/u/37784886'] // Replace with your actual icon URL
       }
     }),
   ],
