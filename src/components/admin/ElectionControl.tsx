@@ -37,17 +37,48 @@ export const ElectionControl = () => {
 
       // Check current election status first
       const currentStatus = await getElectionStatus();
+      
+      // If there's an active election
       if (currentStatus.isActive) {
-        // If there's an active election that has ended, get its results first
-        if (Number(currentStatus.endTime) * 1000 < Date.now()) {
-          const currentElectionId = await getCurrentElectionId();
-          if (currentElectionId > 0) {
-            try {
-              await getElectionHistory(currentElectionId);
-              console.log("Previous election results updated");
-            } catch (error) {
-              console.error("Failed to update previous election results:", error);
+        const now = Date.now();
+        const endTime = Number(currentStatus.endTime) * 1000;
+        
+        // If the election has ended but is still marked as active
+        if (now >= endTime) {
+          try {
+            // End the current election by calling startElection with 0 duration
+            // This will trigger _endElection in the smart contract
+            await writeContractWithConfirmation(
+              'startElection',
+              [0n], // 0 duration to trigger election end
+              address
+            );
+            
+            // Get the results of the ended election
+            const currentElectionId = await getCurrentElectionId();
+            if (currentElectionId > 0) {
+              const results = await getElectionHistory(currentElectionId);
+              console.log("Previous election ended, results:", results);
             }
+            
+            // Now start the new election
+            await writeContractWithConfirmation(
+              'startElection',
+              [BigInt(duration)],
+              address
+            );
+            
+            toast({
+              title: "Success",
+              description: "Previous election ended and new election started successfully",
+            });
+          } catch (error) {
+            console.error("Failed to end previous election:", error);
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: "Failed to end previous election",
+            });
           }
         } else {
           toast({
@@ -57,18 +88,19 @@ export const ElectionControl = () => {
           });
           return;
         }
+      } else {
+        // No active election, start a new one
+        await writeContractWithConfirmation(
+          'startElection',
+          [BigInt(duration)],
+          address
+        );
+        
+        toast({
+          title: "Success",
+          description: "Election started successfully",
+        });
       }
-
-      await writeContractWithConfirmation(
-        'startElection',
-        [BigInt(duration)],
-        address
-      );
-      
-      toast({
-        title: "Success",
-        description: "Election started successfully",
-      });
       
       // Refresh election status
       await getElectionStatus();
