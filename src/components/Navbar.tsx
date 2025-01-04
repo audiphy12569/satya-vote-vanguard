@@ -21,10 +21,10 @@ export const Navbar = () => {
   const fetchAdminAddress = async () => {
     try {
       const data = await readContract({
-        address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
+        address: CONTRACT_ADDRESS as `0x${string}`,
         functionName: 'admin',
-        chainId: sepolia.id
+        chainId: sepolia.id,
       });
       setAdminAddress(data as string);
     } catch (error) {
@@ -41,11 +41,11 @@ export const Navbar = () => {
     if (!address) return;
     try {
       const isEligible = await readContract({
-        address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
+        address: CONTRACT_ADDRESS as `0x${string}`,
         functionName: 'voters',
         args: [address],
-        chainId: sepolia.id
+        chainId: sepolia.id,
       });
       setIsVerifiedVoter(Boolean(isEligible));
     } catch (error) {
