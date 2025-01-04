@@ -114,12 +114,19 @@ export const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <span 
-              className="text-2xl font-bold text-gray-900 dark:text-white cursor-pointer hover:scale-105 transition-transform duration-200"
+            <div 
+              className="flex items-center cursor-pointer hover:scale-105 transition-transform duration-200"
               onClick={() => navigate("/")}
             >
-              Satya Vote
-            </span>
+              <img 
+                src="/logo.png" 
+                alt="Satya Vote Logo" 
+                className="h-8 w-8 mr-2"
+              />
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                Satya Vote
+              </span>
+            </div>
             
             {isConnected && adminAddress && address?.toLowerCase() === adminAddress.toLowerCase() && (
               <div className="ml-8 hidden md:flex space-x-4">
