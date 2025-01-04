@@ -1,35 +1,64 @@
 import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { readContract, writeContract, getPublicClient } from '@wagmi/core';
-import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
-import { config } from "@/config/web3";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { VoterList } from "@/components/admin/VoterList";
+import { VoterActions } from "@/components/admin/VoterActions";
+import { Loader2, Trash2 } from "lucide-react";
 import { writeContractWithConfirmation } from "@/utils/contractUtils";
-import { useAccount } from 'wagmi';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { VoterList } from "./voter/VoterList";
-import { VoterActions } from "./voter/VoterActions";
+import { useToast } from "@/hooks/use-toast";
+import { config } from "@/config/web3";
+import { CONTRACT_ADDRESS } from "@/config/contract";
 
 export const VoterManagement = () => {
+  const { toast } = useToast();
   const [voters, setVoters] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-  const { address } = useAccount();
 
   const fetchVoters = async () => {
+    // Fetch the list of approved voters from the contract
+    // This is a placeholder for the actual implementation
+    // You would replace this with the actual contract call to get the voters
+    setVoters(["0x123...", "0x456..."]); // Example addresses
+  };
+
+  const handleApproveVoter = async (voterAddress: string) => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      const data = await readContract(config, {
-        address: CONTRACT_ADDRESS as `0x${string}`,
-        abi: CONTRACT_ABI,
-        functionName: 'getAllVoters',
-      }) as `0x${string}`[];
-      setVoters([...data]);
+      await writeContractWithConfirmation("approveVoter", [voterAddress]);
+      toast({
+        title: "Voter Approved",
+        description: `Successfully approved ${voterAddress}`,
+        variant: "default",
+      });
+      fetchVoters(); // Refresh the list of voters
     } catch (error) {
-      console.error("Failed to fetch voters:", error);
+      console.error("Failed to approve voter:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to fetch voters",
+        description: "Failed to approve voter.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRemoveAllVoters = async () => {
+    setIsLoading(true);
+    try {
+      await writeContractWithConfirmation("removeAllVoters", []);
+      toast({
+        title: "All Voters Removed",
+        description: "Successfully removed all voters.",
+        variant: "default",
+      });
+      fetchVoters(); // Refresh the list of voters
+    } catch (error) {
+      console.error("Failed to remove all voters:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to remove all voters.",
       });
     } finally {
       setIsLoading(false);
@@ -40,76 +69,40 @@ export const VoterManagement = () => {
     fetchVoters();
   }, []);
 
-  const handleApproveVoter = async (voterAddress: string) => {
-    try {
-      setIsLoading(true);
-      const result = await writeContractWithConfirmation(
-        'approveVoter',
-        [voterAddress as `0x${string}`],
-        address
-      );
-      
-      toast({
-        title: "Success",
-        description: "Voter approved successfully",
-      });
-      
-      await fetchVoters();
-    } catch (error) {
-      console.error("Failed to approve voter:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to approve voter",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleRemoveAllVoters = async () => {
-    try {
-      setIsLoading(true);
-      const result = await writeContractWithConfirmation(
-        'removeAllVoters',
-        [],
-        address
-      );
-      
-      toast({
-        title: "Success",
-        description: "All voters removed successfully",
-      });
-      
-      await fetchVoters();
-    } catch (error) {
-      console.error("Failed to remove all voters:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to remove all voters",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Voter Management</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <VoterActions 
-          onApprove={handleApproveVoter}
-          onRemoveAll={handleRemoveAllVoters} 
-          isLoading={isLoading} 
-        />
-        <VoterList 
-          voters={voters}
-          isLoading={isLoading}
-        />
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Voter Management</CardTitle>
+          <CardDescription>Approve new voters and manage existing ones</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <VoterActions onApprove={handleApproveVoter} />
+            <VoterList 
+              voters={voters} 
+              isLoading={isLoading} 
+              onRemove={() => {}} // Empty function since individual removal is not supported
+            />
+            <div className="mt-6">
+              <Button
+                variant="destructive"
+                onClick={handleRemoveAllVoters}
+                disabled={isLoading || voters.length === 0}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Remove All Voters
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
