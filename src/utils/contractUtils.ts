@@ -29,7 +29,7 @@ export const checkVoterStatus = async (address: string) => {
     const data = await readContract(config, {
       address: CONTRACT_ADDRESS as `0x${string}`,
       abi: CONTRACT_ABI,
-      functionName: 'voters',
+      functionName: 'approvedVoters',
       args: [address as `0x${string}`],
     });
     return Boolean(data);
