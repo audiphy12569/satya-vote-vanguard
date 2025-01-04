@@ -41,7 +41,21 @@ export const ElectionControl = () => {
         // If there's an active election that has ended, get its results first
         if (Number(currentStatus.endTime) * 1000 < Date.now()) {
           const currentElectionId = await getCurrentElectionId();
-          await getElectionHistory(Number(currentElectionId));
+          if (currentElectionId > 0) {
+            try {
+              await getElectionHistory(currentElectionId);
+              console.log("Previous election results updated");
+            } catch (error) {
+              console.error("Failed to update previous election results:", error);
+            }
+          }
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Cannot start new election while current election is active",
+          });
+          return;
         }
       }
 

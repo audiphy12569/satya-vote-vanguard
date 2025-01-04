@@ -3,7 +3,8 @@ import { ElectionHistory } from "@/utils/electionUtils";
 import { Medal } from "lucide-react";
 import { useVoteCount } from "@/hooks/useVoteCount";
 import { useEffect, useState } from "react";
-import { getElectionHistory } from "@/utils/electionUtils";
+import { getElectionHistory, getCurrentElectionId } from "@/utils/electionUtils";
+import { useToast } from "@/hooks/use-toast";
 
 interface ElectionResultsProps {
   election: ElectionHistory;
@@ -12,6 +13,7 @@ interface ElectionResultsProps {
 
 export const ElectionResults = ({ election, isLive = false }: ElectionResultsProps) => {
   const [currentResults, setCurrentResults] = useState(election);
+  const { toast } = useToast();
   
   useEffect(() => {
     setCurrentResults(election);
@@ -23,12 +25,30 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
         const endTime = Number(election.endTime) * 1000;
         
         if (now >= endTime) {
-          // Update results one final time when election ends
           try {
-            const updatedResults = await getElectionHistory(Number(election.id));
+            // Get the current election ID to ensure we're getting the right results
+            const currentId = await getCurrentElectionId();
+            const updatedResults = await getElectionHistory(Number(currentId));
+            
+            if (updatedResults.id === 0n) {
+              console.error("Invalid election ID received");
+              return;
+            }
+            
             setCurrentResults(updatedResults);
+            
+            // Notify user that results have been updated
+            toast({
+              title: "Election Results Updated",
+              description: `Results for Election #${Number(updatedResults.id)} have been finalized.`,
+            });
           } catch (error) {
             console.error("Failed to update election results:", error);
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: "Failed to update election results. Please try again.",
+            });
           }
         }
       };
@@ -38,7 +58,7 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
       const timer = setInterval(checkElectionEnd, 1000);
       return () => clearInterval(timer);
     }
-  }, [election, isLive]);
+  }, [election, isLive, toast]);
 
   const sortedResults = [...currentResults.results].sort((a, b) => 
     Number(b.voteCount - a.voteCount)
@@ -52,12 +72,18 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
   };
 
   const formatDate = (timestamp: bigint) => {
-    return new Date(Number(timestamp) * 1000).toLocaleString();
+    const date = new Date(Number(timestamp) * 1000);
+    return date.getTime() > 0 ? date.toLocaleString() : "N/A";
   };
 
   const isElectionOver = () => {
     return !isLive && Number(currentResults.endTime) * 1000 < Date.now();
   };
+
+  // Don't show results if the election ID is 0 (invalid)
+  if (currentResults.id === 0n) {
+    return null;
+  }
 
   return (
     <Card className="mb-4">
