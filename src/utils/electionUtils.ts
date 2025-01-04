@@ -75,8 +75,8 @@ export const getActiveCandidateCount = async (): Promise<number> => {
 };
 
 export const writeContractWithConfirmation = async (
-  functionName: string,
-  args: any[],
+  functionName: "addCandidate" | "approveVoter" | "removeAllVoters" | "removeCandidate" | "removeVoter" | "startElection" | "vote",
+  args: Parameters<typeof CONTRACT_ABI[number]>[number],
   account: `0x${string}` | undefined
 ) => {
   const { hash } = await writeContract(config, {
