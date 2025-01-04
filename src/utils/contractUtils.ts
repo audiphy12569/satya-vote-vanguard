@@ -30,17 +30,8 @@ export const checkVoterStatus = async (address: string) => {
   }
 };
 
-type ContractFunction = 
-  | "addCandidate" 
-  | "approveVoter" 
-  | "removeAllVoters" 
-  | "removeCandidate" 
-  | "removeVoter" 
-  | "startElection" 
-  | "vote";
-
 export const writeContractWithConfirmation = async (
-  functionName: ContractFunction,
+  functionName: "addCandidate" | "approveVoter" | "removeAllVoters" | "removeCandidate" | "removeVoter" | "startElection" | "vote",
   args: readonly (string | bigint | `0x${string}`)[], 
   account: `0x${string}` | undefined
 ) => {
@@ -48,13 +39,13 @@ export const writeContractWithConfirmation = async (
     address: CONTRACT_ADDRESS as `0x${string}`,
     abi: CONTRACT_ABI,
     functionName,
-    args,
+    args: args as any,
     chain: sepolia,
     account,
   });
 
   const publicClient = await getPublicClient(config);
-  await publicClient.waitForTransactionReceipt({ hash: hash as `0x${string}` });
+  await publicClient.waitForTransactionReceipt({ hash });
   
-  return { hash: hash as `0x${string}` };
+  return { hash };
 };

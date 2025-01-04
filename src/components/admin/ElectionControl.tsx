@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { getActiveCandidateCount, getElectionStatus, getElectionHistory } from "@/utils/electionUtils";
+import { getActiveCandidateCount, getElectionStatus, getElectionHistory, getCurrentElectionId } from "@/utils/electionUtils";
 import { writeContractWithConfirmation } from "@/utils/contractUtils";
 import { useAccount } from 'wagmi';
 

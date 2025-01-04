@@ -24,11 +24,17 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
         
         if (now >= endTime) {
           // Update results one final time when election ends
-          const updatedResults = await getElectionHistory(Number(election.id));
-          setCurrentResults(updatedResults);
+          try {
+            const updatedResults = await getElectionHistory(Number(election.id));
+            setCurrentResults(updatedResults);
+          } catch (error) {
+            console.error("Failed to update election results:", error);
+          }
         }
       };
       
+      // Check immediately and then set up interval
+      checkElectionEnd();
       const timer = setInterval(checkElectionEnd, 1000);
       return () => clearInterval(timer);
     }

@@ -1,7 +1,7 @@
-import { readContract, writeContract, getPublicClient } from '@wagmi/core';
+import { readContract } from '@wagmi/core';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 import { config } from "@/config/web3";
-import { sepolia } from "wagmi/chains";
+import { writeContractWithConfirmation } from './contractUtils';
 
 export interface ElectionStatus {
   isActive: boolean;
@@ -24,26 +24,6 @@ export interface ElectionHistory {
   totalVotes: bigint;
   results: ElectionResult[];
 }
-
-export const writeContractWithConfirmation = async (
-  functionName: "addCandidate" | "approveVoter" | "removeAllVoters" | "removeCandidate" | "removeVoter" | "startElection" | "vote",
-  args: readonly (string | bigint | `0x${string}`)[], 
-  account: `0x${string}` | undefined
-) => {
-  const { hash } = await writeContract(config, {
-    address: CONTRACT_ADDRESS as `0x${string}`,
-    abi: CONTRACT_ABI,
-    functionName,
-    args,
-    chain: sepolia,
-    account,
-  });
-
-  const publicClient = await getPublicClient(config);
-  await publicClient.waitForTransactionReceipt({ hash: hash as `0x${string}` });
-  
-  return { hash: hash as `0x${string}` };
-};
 
 export const getElectionStatus = async (): Promise<ElectionStatus> => {
   try {
@@ -93,12 +73,7 @@ export const getElectionHistory = async (electionId: number): Promise<ElectionHi
       startTime: data[1],
       endTime: data[2],
       totalVotes: data[3],
-      results: data[4].map((result: any) => ({
-        candidateId: result.candidateId,
-        candidateName: result.candidateName,
-        party: result.party,
-        voteCount: result.voteCount,
-      })),
+      results: data[4],
     };
   } catch (error) {
     console.error("Failed to fetch election history:", error);
