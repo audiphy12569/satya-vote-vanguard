@@ -65,6 +65,20 @@ export const getElectionStatus = async (): Promise<ElectionStatus> => {
   }
 };
 
+export const getCurrentElectionId = async (): Promise<number> => {
+  try {
+    const data = await readContract(config, {
+      address: CONTRACT_ADDRESS as `0x${string}`,
+      abi: CONTRACT_ABI,
+      functionName: 'currentElectionId',
+    });
+    return Number(data);
+  } catch (error) {
+    console.error("Failed to fetch current election ID:", error);
+    throw error;
+  }
+};
+
 export const getElectionHistory = async (electionId: number): Promise<ElectionHistory> => {
   try {
     const data = await readContract(config, {

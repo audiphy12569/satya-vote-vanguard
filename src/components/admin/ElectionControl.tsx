@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { getActiveCandidateCount, getElectionStatus } from "@/utils/electionUtils";
+import { getActiveCandidateCount, getElectionStatus, getElectionHistory } from "@/utils/electionUtils";
 import { writeContractWithConfirmation } from "@/utils/contractUtils";
 import { useAccount } from 'wagmi';
 
@@ -33,6 +33,16 @@ export const ElectionControl = () => {
           description: "Duration must be at least 1 minute",
         });
         return;
+      }
+
+      // Check current election status first
+      const currentStatus = await getElectionStatus();
+      if (currentStatus.isActive) {
+        // If there's an active election that has ended, get its results first
+        if (Number(currentStatus.endTime) * 1000 < Date.now()) {
+          const currentElectionId = await getCurrentElectionId();
+          await getElectionHistory(Number(currentElectionId));
+        }
       }
 
       await writeContractWithConfirmation(
