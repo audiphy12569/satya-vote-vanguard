@@ -41,7 +41,7 @@ type ContractFunction =
 
 export const writeContractWithConfirmation = async (
   functionName: ContractFunction,
-  args: readonly unknown[],
+  args: readonly (string | bigint | `0x${string}`)[], 
   account: `0x${string}` | undefined
 ) => {
   const { hash } = await writeContract(config, {
@@ -51,10 +51,10 @@ export const writeContractWithConfirmation = async (
     args,
     chain: sepolia,
     account,
-  }) as { hash: `0x${string}` };
+  });
 
   const publicClient = await getPublicClient(config);
-  await publicClient.waitForTransactionReceipt({ hash });
+  await publicClient.waitForTransactionReceipt({ hash: hash as `0x${string}` });
   
-  return hash;
+  return { hash: hash as `0x${string}` };
 };

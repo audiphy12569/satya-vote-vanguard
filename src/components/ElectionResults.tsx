@@ -24,6 +24,10 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
     return new Date(Number(timestamp) * 1000).toLocaleString();
   };
 
+  const isElectionOver = () => {
+    return !isLive && Number(election.endTime) * 1000 < Date.now();
+  };
+
   return (
     <Card className="mb-4">
       <CardHeader>
@@ -37,6 +41,7 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
                 Started: {formatDate(election.startTime)}
                 <br />
                 Ended: {formatDate(election.endTime)}
+                {isElectionOver() && <span className="text-red-500 ml-2">(Ended)</span>}
               </span>
             </>
           )}
@@ -52,7 +57,7 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
               const prevVotes = index > 0 ? sortedResults[index - 1].voteCount : null;
               const isTied = prevVotes === result.voteCount;
               const liveVoteCount = isLive ? 
-                useVoteCount(Number(result.candidateId), true) : 
+                useVoteCount(Number(result.candidateId), !isElectionOver()) : 
                 result.voteCount;
 
               return (
@@ -70,7 +75,9 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
                   <div className="text-right">
                     <p className="font-bold">
                       {liveVoteCount.toString()} votes
-                      {isLive && <span className="text-xs text-purple-500 ml-1">(Live)</span>}
+                      {isLive && !isElectionOver() && (
+                        <span className="text-xs text-purple-500 ml-1">(Live)</span>
+                      )}
                     </p>
                     {isTied && <p className="text-sm text-orange-500">Tied</p>}
                   </div>

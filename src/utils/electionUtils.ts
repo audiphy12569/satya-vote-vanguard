@@ -26,8 +26,8 @@ export interface ElectionHistory {
 }
 
 export const writeContractWithConfirmation = async (
-  functionName: string,
-  args: readonly unknown[],
+  functionName: "addCandidate" | "approveVoter" | "removeAllVoters" | "removeCandidate" | "removeVoter" | "startElection" | "vote",
+  args: readonly (string | bigint | `0x${string}`)[], 
   account: `0x${string}` | undefined
 ) => {
   const { hash } = await writeContract(config, {
@@ -37,12 +37,12 @@ export const writeContractWithConfirmation = async (
     args,
     chain: sepolia,
     account,
-  }) as { hash: `0x${string}` };
+  });
 
   const publicClient = await getPublicClient(config);
-  await publicClient.waitForTransactionReceipt({ hash });
+  await publicClient.waitForTransactionReceipt({ hash: hash as `0x${string}` });
   
-  return hash;
+  return { hash: hash as `0x${string}` };
 };
 
 export const getElectionStatus = async (): Promise<ElectionStatus> => {
@@ -51,7 +51,7 @@ export const getElectionStatus = async (): Promise<ElectionStatus> => {
       address: CONTRACT_ADDRESS as `0x${string}`,
       abi: CONTRACT_ABI,
       functionName: 'getElectionStatus',
-    });
+    }) as [boolean, bigint, bigint, bigint];
     
     return {
       isActive: data[0],
@@ -72,7 +72,7 @@ export const getElectionHistory = async (electionId: number): Promise<ElectionHi
       abi: CONTRACT_ABI,
       functionName: 'getElectionHistory',
       args: [BigInt(electionId)],
-    });
+    }) as [bigint, bigint, bigint, bigint, ElectionResult[]];
     
     return {
       id: data[0],
