@@ -1,11 +1,6 @@
-import { readContract, type PublicClient, createPublicClient, http } from '@wagmi/core';
-import { CONTRACT_ADDRESS, CONTRACT_ABI, ALCHEMY_API_KEY } from "@/config/contract";
+import { readContract } from '@wagmi/core';
+import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 import { sepolia } from "wagmi/chains";
-
-const publicClient = createPublicClient({
-  chain: sepolia,
-  transport: http(`https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`)
-});
 
 export const getAdminAddress = async () => {
   try {
@@ -14,7 +9,6 @@ export const getAdminAddress = async () => {
       abi: CONTRACT_ABI,
       functionName: 'admin',
       chainId: sepolia.id,
-      client: publicClient,
     });
     return data as string;
   } catch (error) {
@@ -31,7 +25,6 @@ export const checkVoterStatus = async (address: string) => {
       functionName: 'voters',
       args: [address],
       chainId: sepolia.id,
-      client: publicClient,
     });
     return Boolean(data);
   } catch (error) {
