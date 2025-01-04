@@ -5,6 +5,10 @@ import { walletConnect } from "wagmi/connectors";
 
 const projectId = import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID;
 
+if (!projectId) {
+  throw new Error("Missing VITE_WALLET_CONNECT_PROJECT_ID in environment variables");
+}
+
 export const config = createConfig({
   chains: [sepolia],
   transports: {
@@ -19,6 +23,9 @@ export const config = createConfig({
         description: 'Secure, Transparent, and Decentralized Voting System',
         url: 'https://satyavote.com', // Replace with your actual URL
         icons: ['https://avatars.githubusercontent.com/u/37784886'], // Replace with your actual icon URL
+      },
+      options: {
+        projectId,
         qrModalOptions: {
           themeMode: "dark",
           desktopWallets: ["metamask", "brave", "zerion", "ledger"],
