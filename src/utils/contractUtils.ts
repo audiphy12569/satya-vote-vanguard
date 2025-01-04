@@ -35,7 +35,7 @@ export const writeContractWithConfirmation = async (
   args: readonly (string | bigint | `0x${string}`)[], 
   account: `0x${string}` | undefined
 ) => {
-  const { hash } = await writeContract(config, {
+  const result = await writeContract(config, {
     address: CONTRACT_ADDRESS as `0x${string}`,
     abi: CONTRACT_ABI,
     functionName,
@@ -45,7 +45,7 @@ export const writeContractWithConfirmation = async (
   });
 
   const publicClient = await getPublicClient(config);
-  await publicClient.waitForTransactionReceipt({ hash });
+  await publicClient.waitForTransactionReceipt({ hash: result.hash });
   
-  return { hash };
+  return result;
 };

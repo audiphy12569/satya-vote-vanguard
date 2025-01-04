@@ -9,8 +9,56 @@ import { useAccount } from 'wagmi';
 export const ElectionControl = () => {
   const { toast } = useToast();
   const [isStarting, setIsStarting] = useState(false);
+  const [isEnding, setIsEnding] = useState(false);
   const [duration, setDuration] = useState<number>(60);
   const { address } = useAccount();
+
+  const handleEndCurrentElection = async () => {
+    try {
+      setIsEnding(true);
+      const currentStatus = await getElectionStatus();
+      
+      if (!currentStatus.isActive) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "No active election to end",
+        });
+        return;
+      }
+
+      // End the current election by calling startElection with 0 duration
+      await writeContractWithConfirmation(
+        'startElection',
+        [0n], // 0 duration to trigger election end
+        address
+      );
+      
+      // Get the results of the ended election
+      const currentElectionId = await getCurrentElectionId();
+      if (currentElectionId > 0) {
+        const results = await getElectionHistory(currentElectionId);
+        console.log("Election ended, results:", results);
+      }
+      
+      toast({
+        title: "Success",
+        description: "Election ended successfully",
+      });
+
+      // Refresh election status
+      await getElectionStatus();
+    } catch (error) {
+      console.error("Failed to end election:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to end election",
+      });
+    } finally {
+      setIsEnding(false);
+    }
+  };
 
   const handleStartElection = async () => {
     try {
@@ -130,6 +178,13 @@ export const ElectionControl = () => {
         />
         <Button onClick={handleStartElection} disabled={isStarting}>
           {isStarting ? "Starting..." : "Start Election"}
+        </Button>
+        <Button 
+          onClick={handleEndCurrentElection} 
+          disabled={isEnding}
+          variant="destructive"
+        >
+          {isEnding ? "Ending..." : "End Current Election"}
         </Button>
       </div>
     </div>
