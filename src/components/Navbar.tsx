@@ -1,7 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { useNavigate } from "react-router-dom";
-import { injected } from "wagmi/connectors";
+import { injected, walletConnect } from "wagmi/connectors";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Navbar = () => {
   const { address, isConnected } = useAccount();
@@ -9,9 +15,17 @@ export const Navbar = () => {
   const { disconnect } = useDisconnect();
   const navigate = useNavigate();
 
-  const handleConnect = async () => {
+  const handleConnect = async (connector: 'metamask' | 'walletconnect') => {
     try {
-      await connect({ connector: injected() });
+      if (connector === 'metamask') {
+        await connect({ connector: injected() });
+      } else {
+        await connect({ 
+          connector: walletConnect({ 
+            projectId: import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID 
+          })
+        });
+      }
     } catch (error) {
       console.error("Failed to connect wallet:", error);
     }
@@ -22,7 +36,10 @@ export const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <span className="text-2xl font-bold text-purple-800 dark:text-purple-400 cursor-pointer" onClick={() => navigate("/")}>
+            <span 
+              className="text-2xl font-bold text-purple-800 dark:text-purple-400 cursor-pointer" 
+              onClick={() => navigate("/")}
+            >
               Satya Vote
             </span>
           </div>
@@ -53,12 +70,21 @@ export const Navbar = () => {
                 </Button>
               </div>
             ) : (
-              <Button
-                onClick={handleConnect}
-                className="bg-purple-600 hover:bg-purple-700 text-white"
-              >
-                Connect Wallet
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+                    Connect Wallet
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => handleConnect('metamask')}>
+                    MetaMask
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleConnect('walletconnect')}>
+                    WalletConnect
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
         </div>
