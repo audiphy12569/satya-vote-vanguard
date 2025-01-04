@@ -26,7 +26,7 @@ export const Navbar = () => {
           title: "Wrong Network",
           description: "Please switch to Sepolia network to continue.",
         });
-        await config.chains[0].connector?.switchChain?.(sepolia.id);
+        await config.switchChain?.({ chainId: sepolia.id });
         return;
       }
 
@@ -53,7 +53,7 @@ export const Navbar = () => {
           title: "Wrong Network",
           description: "Please switch to Sepolia network to continue.",
         });
-        config.chains[0].connector?.switchChain?.(sepolia.id);
+        config.switchChain?.({ chainId: sepolia.id });
         return;
       }
 
@@ -64,7 +64,7 @@ export const Navbar = () => {
         navigate("/voter");
       }
     }
-  }, [isConnected, address, chainId, navigate, config.chains]);
+  }, [isConnected, address, chainId, navigate, config]);
 
   return (
     <nav className="bg-white dark:bg-gray-800 shadow-lg">
