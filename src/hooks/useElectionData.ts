@@ -5,6 +5,7 @@ import { config } from "@/config/web3";
 import { sepolia } from "wagmi/chains";
 import { getElectionStatus, hasVoted, getElectionHistory } from "@/utils/electionUtils";
 import { useToast } from "@/hooks/use-toast";
+import type { Hash } from 'viem';
 
 interface Candidate {
   id: number;
@@ -81,14 +82,14 @@ export const useElectionData = (address: `0x${string}` | undefined) => {
     
     try {
       setIsVoting(true);
-      const result = await writeContract(config, {
+      const { hash } = await writeContract(config, {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
         functionName: 'vote',
         args: [BigInt(candidateId)],
         chain: sepolia,
         account: address,
-      }) as { hash: `0x${string}` };
+      });
 
       toast({
         title: "Vote Submitted",
@@ -97,7 +98,7 @@ export const useElectionData = (address: `0x${string}` | undefined) => {
       });
 
       const publicClient = await getPublicClient(config);
-      await publicClient.waitForTransactionReceipt({ hash: result.hash });
+      await publicClient.waitForTransactionReceipt({ hash: hash as Hash });
       
       setHasUserVoted(true);
       await fetchCandidates();
