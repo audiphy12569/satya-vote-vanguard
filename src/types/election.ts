@@ -12,13 +12,3 @@ export interface ElectionHistory {
   totalVotes: bigint;
   results: ElectionResult[];
 }
-
-export interface Candidate {
-  id: number;
-  name: string;
-  party: string;
-  tagline: string;
-  logoIPFS: string;
-  voteCount: bigint;
-  isActive: boolean;
-}

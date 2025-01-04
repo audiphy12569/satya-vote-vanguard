@@ -3,7 +3,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ElectionHistory } from "@/types/election";
 import { useVoteCount } from "@/hooks/useVoteCount";
 import { useEffect, useState } from "react";
-import { getElectionHistory, getCurrentElectionId } from "@/utils/electionUtils";
+import { getElectionHistory, getCurrentElectionId, getElectionStatus } from "@/utils/electionUtils";
 import { useToast } from "@/hooks/use-toast";
 import { ElectionHeader } from "./election/ElectionHeader";
 import { ElectionResultCard } from "./election/ElectionResultCard";
@@ -22,21 +22,26 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
     
     const fetchAndUpdateResults = async () => {
       try {
+        const status = await getElectionStatus();
         const currentId = await getCurrentElectionId();
-        const updatedResults = await getElectionHistory(Number(currentId));
         
-        if (updatedResults.id === 0n) {
-          console.error("Invalid election ID received");
-          return;
-        }
-        
-        setCurrentResults(updatedResults);
-        
-        if (updatedResults.totalVotes !== election.totalVotes) {
-          toast({
-            title: "Election Results Updated",
-            description: `Results for Election #${Number(updatedResults.id)} have been updated.`,
-          });
+        // Check if the election has ended based on time
+        if (status.endTime && Date.now() / 1000 > Number(status.endTime)) {
+          const updatedResults = await getElectionHistory(Number(currentId));
+          
+          if (updatedResults.id === 0n) {
+            console.error("Invalid election ID received");
+            return;
+          }
+          
+          setCurrentResults(updatedResults);
+          
+          if (updatedResults.totalVotes !== election.totalVotes) {
+            toast({
+              title: "Election Results Updated",
+              description: `Final results for Election #${Number(updatedResults.id)} are now available.`,
+            });
+          }
         }
       } catch (error) {
         console.error("Failed to update election results:", error);
