@@ -3,7 +3,7 @@ import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { useNavigate } from "react-router-dom";
 import { walletConnect } from "wagmi/connectors";
 import { useEffect, useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { sepolia } from "wagmi/chains";
 import { useChainId, useConfig } from "wagmi";
 import { createPublicClient, http, getContract } from "viem";
