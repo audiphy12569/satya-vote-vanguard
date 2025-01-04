@@ -67,32 +67,47 @@ export const Navbar = () => {
         return;
       }
 
-      if (address.toLowerCase() === adminAddress.toLowerCase()) {
-        navigate("/admin");
-        toast({
-          title: "Welcome Admin",
-          description: "You have been redirected to the admin dashboard.",
-        });
+      const isAdmin = address.toLowerCase() === adminAddress.toLowerCase();
+      const currentPath = location.pathname;
+      
+      if (isAdmin) {
+        if (!currentPath.startsWith('/admin')) {
+          navigate("/admin");
+          toast({
+            title: "Welcome Admin",
+            description: "You have been redirected to the admin dashboard.",
+          });
+        }
       } else {
         if (isVerifiedVoter) {
-          navigate("/voter");
-          toast({
-            title: "Welcome Voter",
-            description: "You have been verified as an eligible voter.",
-          });
+          if (currentPath !== '/voter') {
+            navigate("/voter");
+            toast({
+              title: "Welcome Voter",
+              description: "You have been verified as an eligible voter.",
+            });
+          }
         } else {
-          navigate("/");
-          toast({
-            variant: "destructive",
-            title: "Not Verified",
-            description: "You are not verified to vote. Please contact the admin.",
-          });
+          if (currentPath !== '/') {
+            navigate("/");
+            toast({
+              variant: "destructive",
+              title: "Not Verified",
+              description: "You are not verified to vote. Please contact the admin.",
+            });
+          }
         }
       }
     }
-  }, [isConnected, address, chainId, navigate, adminAddress, isVerifiedVoter]);
+  }, [isConnected, address, chainId, navigate, adminAddress, isVerifiedVoter, location.pathname]);
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleNavigation = (path: string) => {
+    if (address?.toLowerCase() === adminAddress?.toLowerCase()) {
+      navigate(path);
+    }
+  };
 
   return (
     <nav className="bg-white dark:bg-gray-900 shadow-lg animate-fade-in border-b border-gray-200 dark:border-gray-800">
@@ -109,7 +124,7 @@ export const Navbar = () => {
             {isConnected && adminAddress && address?.toLowerCase() === adminAddress.toLowerCase() && (
               <div className="ml-8 hidden md:flex space-x-4">
                 <button 
-                  onClick={() => navigate("/admin/voters")}
+                  onClick={() => handleNavigation("/admin/voters")}
                   className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200
                     ${isActive("/admin/voters") 
                       ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900" 
@@ -119,7 +134,7 @@ export const Navbar = () => {
                   <span>Voters</span>
                 </button>
                 <button 
-                  onClick={() => navigate("/admin/candidates")}
+                  onClick={() => handleNavigation("/admin/candidates")}
                   className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200
                     ${isActive("/admin/candidates") 
                       ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900" 
@@ -129,7 +144,7 @@ export const Navbar = () => {
                   <span>Candidates</span>
                 </button>
                 <button 
-                  onClick={() => navigate("/admin/election")}
+                  onClick={() => handleNavigation("/admin/election")}
                   className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200
                     ${isActive("/admin/election") 
                       ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900" 
