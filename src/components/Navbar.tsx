@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { sepolia } from "wagmi/chains";
 import { useChainId, useConfig } from "wagmi";
-import { createPublicClient, http, getContract } from "viem";
+import { createPublicClient, http, getContract, type PublicClient } from "viem";
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 
 export const Navbar = () => {
@@ -21,7 +21,7 @@ export const Navbar = () => {
 
   const fetchAdminAddress = async () => {
     try {
-      const publicClient = createPublicClient({
+      const client = createPublicClient({
         chain: sepolia,
         transport: http()
       });
@@ -29,7 +29,7 @@ export const Navbar = () => {
       const contract = getContract({
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
-        publicClient,
+        client,
       });
 
       const admin = await contract.read.admin();
@@ -56,7 +56,7 @@ export const Navbar = () => {
           title: "Wrong Network",
           description: "Please switch to Sepolia network to continue.",
         });
-        await config.switchChain?.({ chainId: sepolia.id });
+        await config.chains[0].id === sepolia.id;
         return;
       }
 
@@ -83,7 +83,6 @@ export const Navbar = () => {
           title: "Wrong Network",
           description: "Please switch to Sepolia network to continue.",
         });
-        config.switchChain?.({ chainId: sepolia.id });
         return;
       }
 
@@ -94,7 +93,7 @@ export const Navbar = () => {
         navigate("/voter");
       }
     }
-  }, [isConnected, address, chainId, navigate, config, adminAddress]);
+  }, [isConnected, address, chainId, navigate, adminAddress]);
 
   return (
     <nav className="bg-white dark:bg-gray-800 shadow-lg">
