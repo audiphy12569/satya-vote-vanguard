@@ -79,8 +79,7 @@ export const useElectionData = (address: `0x${string}` | undefined) => {
     
     try {
       setIsVoting(true);
-
-      const { hash } = await writeContract(config, {
+      const result = await writeContract(config, {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
         functionName: 'vote',
@@ -96,7 +95,7 @@ export const useElectionData = (address: `0x${string}` | undefined) => {
       });
 
       const publicClient = await getPublicClient(config);
-      await publicClient.waitForTransactionReceipt({ hash });
+      await publicClient.waitForTransactionReceipt({ hash: result.hash });
       
       setHasUserVoted(true);
       await fetchCandidates();

@@ -43,11 +43,11 @@ export const VoterManagement = () => {
   const handleApproveVoter = async (voterAddress: string) => {
     try {
       setIsLoading(true);
-      const { hash } = await writeContractWithConfirmation(
+      const result = await writeContractWithConfirmation(
         'approveVoter',
         [voterAddress as `0x${string}`],
         address
-      ) as { hash: `0x${string}` };
+      );
       
       toast({
         title: "Success",
@@ -67,41 +67,14 @@ export const VoterManagement = () => {
     }
   };
 
-  const handleRemoveVoter = async (voterAddress: string) => {
-    try {
-      setIsLoading(true);
-      const { hash } = await writeContractWithConfirmation(
-        'removeVoter',
-        [voterAddress as `0x${string}`],
-        address
-      ) as { hash: `0x${string}` };
-      
-      toast({
-        title: "Success",
-        description: "Voter removed successfully",
-      });
-      
-      await fetchVoters();
-    } catch (error) {
-      console.error("Failed to remove voter:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to remove voter",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleRemoveAllVoters = async () => {
     try {
       setIsLoading(true);
-      const { hash } = await writeContractWithConfirmation(
+      const result = await writeContractWithConfirmation(
         'removeAllVoters',
         [],
         address
-      ) as { hash: `0x${string}` };
+      );
       
       toast({
         title: "Success",
@@ -134,7 +107,6 @@ export const VoterManagement = () => {
         />
         <VoterList 
           voters={voters}
-          onRemove={handleRemoveVoter}
           isLoading={isLoading}
         />
       </CardContent>

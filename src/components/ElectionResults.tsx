@@ -18,44 +18,35 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
   useEffect(() => {
     setCurrentResults(election);
     
-    // Set up timer to check if election has ended
-    if (isLive) {
-      const checkElectionEnd = async () => {
-        const now = Date.now() / 1000;
-        const endTime = Number(election.endTime);
+    const fetchAndUpdateResults = async () => {
+      try {
+        // Get the current election ID to ensure we're getting the right results
+        const currentId = await getCurrentElectionId();
+        const updatedResults = await getElectionHistory(Number(currentId));
         
-        if (now >= endTime) {
-          try {
-            // Get the current election ID to ensure we're getting the right results
-            const currentId = await getCurrentElectionId();
-            const updatedResults = await getElectionHistory(Number(currentId));
-            
-            if (updatedResults.id === 0n) {
-              console.error("Invalid election ID received");
-              return;
-            }
-            
-            setCurrentResults(updatedResults);
-            
-            // Notify user that results have been updated
-            toast({
-              title: "Election Results Updated",
-              description: `Results for Election #${Number(updatedResults.id)} have been finalized.`,
-            });
-          } catch (error) {
-            console.error("Failed to update election results:", error);
-            toast({
-              variant: "destructive",
-              title: "Error",
-              description: "Failed to update election results. Please try again.",
-            });
-          }
+        if (updatedResults.id === 0n) {
+          console.error("Invalid election ID received");
+          return;
         }
-      };
-      
-      // Check immediately and then set up interval
-      checkElectionEnd();
-      const timer = setInterval(checkElectionEnd, 5000); // Check every 5 seconds
+        
+        setCurrentResults(updatedResults);
+        
+        // Only show toast if results have changed
+        if (updatedResults.totalVotes !== election.totalVotes) {
+          toast({
+            title: "Election Results Updated",
+            description: `Results for Election #${Number(updatedResults.id)} have been updated.`,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to update election results:", error);
+      }
+    };
+    
+    // Set up polling for live results
+    if (isLive) {
+      fetchAndUpdateResults(); // Initial fetch
+      const timer = setInterval(fetchAndUpdateResults, 5000); // Poll every 5 seconds
       return () => clearInterval(timer);
     }
   }, [election, isLive, toast]);
@@ -113,9 +104,7 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
               const position = getPosition(index);
               const prevVotes = index > 0 ? sortedResults[index - 1].voteCount : null;
               const isTied = prevVotes === result.voteCount;
-              const liveVoteCount = isLive && !isElectionOver() ? 
-                useVoteCount(Number(result.candidateId), true) : 
-                result.voteCount;
+              const liveVoteCount = isLive ? useVoteCount(Number(result.candidateId), true) : result.voteCount;
 
               return (
                 <div 
