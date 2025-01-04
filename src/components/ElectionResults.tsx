@@ -1,12 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ElectionHistory } from "@/utils/electionUtils";
 import { Medal } from "lucide-react";
+import { useVoteCount } from "@/hooks/useVoteCount";
 
 interface ElectionResultsProps {
   election: ElectionHistory;
+  isLive?: boolean;
 }
 
-export const ElectionResults = ({ election }: ElectionResultsProps) => {
+export const ElectionResults = ({ election, isLive = false }: ElectionResultsProps) => {
   const sortedResults = [...election.results].sort((a, b) => 
     Number(b.voteCount - a.voteCount)
   );
@@ -22,21 +24,30 @@ export const ElectionResults = ({ election }: ElectionResultsProps) => {
     <Card>
       <CardHeader>
         <CardTitle className="text-lg">
-          Election #{Number(election.id)} Results
-          <span className="text-sm text-gray-500 block">
-            {new Date(Number(election.startTime) * 1000).toLocaleString()}
-          </span>
+          {isLive ? (
+            "Current Election Results (Live)"
+          ) : (
+            <>
+              Election #{Number(election.id)} Results
+              <span className="text-sm text-gray-500 block">
+                {new Date(Number(election.startTime) * 1000).toLocaleString()}
+              </span>
+            </>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
         {election.totalVotes === 0n ? (
-          <p className="text-center text-gray-500">No votes were cast in this election</p>
+          <p className="text-center text-gray-500">No votes have been cast yet</p>
         ) : (
           <div className="space-y-4">
             {sortedResults.map((result, index) => {
               const position = getPosition(index);
               const prevVotes = index > 0 ? sortedResults[index - 1].voteCount : null;
               const isTied = prevVotes === result.voteCount;
+              const liveVoteCount = isLive ? 
+                useVoteCount(Number(result.candidateId), true) : 
+                result.voteCount;
 
               return (
                 <div key={String(result.candidateId)} className="flex items-center justify-between p-2 bg-gray-50 rounded">
@@ -48,7 +59,10 @@ export const ElectionResults = ({ election }: ElectionResultsProps) => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold">{result.voteCount.toString()} votes</p>
+                    <p className="font-bold">
+                      {liveVoteCount.toString()} votes
+                      {isLive && <span className="text-xs text-purple-500 ml-1">(Live)</span>}
+                    </p>
                     {isTied && <p className="text-sm text-orange-500">Tied</p>}
                   </div>
                 </div>

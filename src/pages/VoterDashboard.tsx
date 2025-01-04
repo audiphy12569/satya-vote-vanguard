@@ -327,15 +327,25 @@ export const VoterDashboard = () => {
 
       <Card className="w-full max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle>Past Elections</CardTitle>
+          <CardTitle>Election Results</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {electionActive ? (
-            <Alert>
-              <AlertDescription>
-                Election is currently in progress
-              </AlertDescription>
-            </Alert>
+            <ElectionResults 
+              election={{
+                id: BigInt(0),
+                startTime: BigInt(0),
+                endTime: BigInt(0),
+                totalVotes: BigInt(0),
+                results: candidates.map(c => ({
+                  candidateId: BigInt(c.id),
+                  candidateName: c.name,
+                  party: c.party,
+                  voteCount: c.voteCount
+                }))
+              }}
+              isLive={true}
+            />
           ) : pastElections.length === 0 ? (
             <Alert>
               <AlertDescription>

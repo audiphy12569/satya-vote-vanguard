@@ -65,23 +65,11 @@ export const VoterManagement = () => {
 
     try {
       setIsLoading(true);
-      const { hash } = await writeContract(config, {
-        address: CONTRACT_ADDRESS as `0x${string}`,
-        abi: CONTRACT_ABI,
-        functionName: 'approveVoter',
-        args: [voterAddress as `0x${string}`],
-        chain: sepolia,
-        account: address,
-      });
-
-      toast({
-        title: "Transaction Submitted",
-        description: "Please wait for confirmation...",
-        variant: "default",
-      });
-
-      const publicClient = await getPublicClient(config);
-      await publicClient.waitForTransactionReceipt({ hash });
+      await writeContractWithConfirmation(
+        'approveVoter',
+        [voterAddress as `0x${string}`],
+        address as `0x${string}`
+      );
       
       toast({
         title: "Transaction Successful",

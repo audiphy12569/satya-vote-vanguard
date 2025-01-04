@@ -1,6 +1,7 @@
-import { readContract } from '@wagmi/core';
+import { readContract, writeContract, getPublicClient } from '@wagmi/core';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 import { config } from "@/config/web3";
+import { sepolia } from "wagmi/chains";
 
 export interface ElectionStatus {
   isActive: boolean;
@@ -51,7 +52,7 @@ export const getElectionHistory = async (electionId: number): Promise<ElectionHi
     startTime: data[1],
     endTime: data[2],
     totalVotes: data[3],
-    results: data[4],
+    results: [...data[4]] as ElectionResult[],
   };
 };
 
@@ -71,4 +72,24 @@ export const getActiveCandidateCount = async (): Promise<number> => {
     functionName: 'getActiveCandidateCount',
   });
   return Number(count);
+};
+
+export const writeContractWithConfirmation = async (
+  functionName: string,
+  args: any[],
+  account: `0x${string}` | undefined
+) => {
+  const { hash } = await writeContract(config, {
+    address: CONTRACT_ADDRESS as `0x${string}`,
+    abi: CONTRACT_ABI,
+    functionName,
+    args,
+    chain: sepolia,
+    account,
+  });
+
+  const publicClient = await getPublicClient(config);
+  await publicClient.waitForTransactionReceipt({ hash });
+  
+  return hash;
 };
