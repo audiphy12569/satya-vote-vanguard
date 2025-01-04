@@ -17,5 +17,23 @@ export const CONTRACT_ABI = [
     "stateMutability": "view",
     "type": "function"
   },
-  // ... paste the full ABI here
-];
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "voters",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+] as const;
