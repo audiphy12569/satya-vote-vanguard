@@ -19,13 +19,12 @@ export const Navbar = () => {
 
   const fetchAdminAddress = async () => {
     try {
-      const admin = await readContract({
+      const data = await readContract({
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
         functionName: 'admin',
       });
-
-      setAdminAddress(admin as string);
+      setAdminAddress(data as string);
     } catch (error) {
       console.error("Failed to fetch admin address:", error);
       toast({
@@ -118,12 +117,7 @@ export const Navbar = () => {
                 </Button>
               </div>
             ) : (
-              <Button 
-                onClick={handleConnect}
-                className="bg-purple-600 hover:bg-purple-700 text-white"
-              >
-                Connect Wallet
-              </Button>
+              <w3m-button />
             )}
           </div>
         </div>
