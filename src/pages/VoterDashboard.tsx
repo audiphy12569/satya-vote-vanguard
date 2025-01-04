@@ -5,8 +5,23 @@ import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { useAccount, useChainId } from "wagmi";
 import { checkVoterStatus } from "@/utils/contractUtils";
-import { CheckCircle2, XCircle, Loader2, RefreshCw } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, RefreshCw, Vote } from "lucide-react";
 import { sepolia } from "wagmi/chains";
+import { ElectionTimer } from "@/components/ElectionTimer";
+import { ElectionResults } from "@/components/ElectionResults";
+import { getElectionStatus, hasVoted, getElectionHistory } from "@/utils/electionUtils";
+import { writeContract, getPublicClient, readContract } from '@wagmi/core';
+import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
+import { config } from "@/config/web3";
+
+interface Candidate {
+  id: number;
+  name: string;
+  party: string;
+  tagline: string;
+  logoIPFS: string;
+  voteCount: bigint;
+}
 
 export const VoterDashboard = () => {
   const { address, isConnected } = useAccount();
@@ -15,6 +30,12 @@ export const VoterDashboard = () => {
   const [isVerifiedVoter, setIsVerifiedVoter] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [electionActive, setElectionActive] = useState(false);
+  const [endTime, setEndTime] = useState<number>(0);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [hasUserVoted, setHasUserVoted] = useState(false);
+  const [pastElections, setPastElections] = useState<any[]>([]);
+  const [isVoting, setIsVoting] = useState(false);
 
   const checkVoterEligibility = async () => {
     if (!address || !isConnected) {
@@ -42,12 +63,115 @@ export const VoterDashboard = () => {
           description: "You are not verified to vote. Please contact the admin.",
         });
       }
+
+      const status = await getElectionStatus();
+      setElectionActive(status.isActive);
+      setEndTime(Number(status.endTime));
+
+      if (status.isActive && isVerified) {
+        const voted = await hasVoted(address);
+        setHasUserVoted(voted);
+        await fetchCandidates();
+      }
+
+      await fetchPastElections();
     } catch (err) {
       console.error("Failed to check voter status:", err);
       setError("Failed to check voter eligibility. Please try again later.");
       setIsVerifiedVoter(false);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchCandidates = async () => {
+    try {
+      const count = await readContract(config, {
+        address: CONTRACT_ADDRESS as `0x${string}`,
+        abi: CONTRACT_ABI,
+        functionName: 'getCandidateCount',
+      });
+
+      const candidatesData = [];
+      for (let i = 1; i <= Number(count); i++) {
+        const candidate = await readContract(config, {
+          address: CONTRACT_ADDRESS as `0x${string}`,
+          abi: CONTRACT_ABI,
+          functionName: 'getCandidate',
+          args: [BigInt(i)],
+        });
+        candidatesData.push({
+          id: i,
+          name: candidate[0],
+          party: candidate[1],
+          tagline: candidate[2],
+          logoIPFS: candidate[3],
+          voteCount: candidate[4],
+        });
+      }
+      setCandidates(candidatesData);
+    } catch (error) {
+      console.error("Failed to fetch candidates:", error);
+    }
+  };
+
+  const fetchPastElections = async () => {
+    try {
+      const totalElections = await readContract(config, {
+        address: CONTRACT_ADDRESS as `0x${string}`,
+        abi: CONTRACT_ABI,
+        functionName: 'getTotalElections',
+      });
+
+      const elections = [];
+      for (let i = 1; i <= Number(totalElections); i++) {
+        const election = await getElectionHistory(i);
+        elections.push(election);
+      }
+      setPastElections(elections);
+    } catch (error) {
+      console.error("Failed to fetch past elections:", error);
+    }
+  };
+
+  const handleVote = async (candidateId: number) => {
+    try {
+      setIsVoting(true);
+      const { hash } = await writeContract(config, {
+        address: CONTRACT_ADDRESS as `0x${string}`,
+        abi: CONTRACT_ABI,
+        functionName: 'vote',
+        args: [BigInt(candidateId)],
+        chain: sepolia,
+        account: address,
+      });
+
+      toast({
+        title: "Vote Submitted",
+        description: "Please wait for confirmation...",
+        variant: "default",
+      });
+
+      const publicClient = await getPublicClient(config);
+      await publicClient.waitForTransactionReceipt({ hash });
+      
+      setHasUserVoted(true);
+      await fetchCandidates();
+      
+      toast({
+        title: "Vote Successful",
+        description: "Your vote has been recorded.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Failed to vote:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to cast vote."
+      });
+    } finally {
+      setIsVoting(false);
     }
   };
 
@@ -127,6 +251,65 @@ export const VoterDashboard = () => {
                 )}
               </div>
 
+              {isVerifiedVoter && electionActive && (
+                <div className="space-y-4">
+                  <ElectionTimer endTime={endTime} />
+                  
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Current Election</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {hasUserVoted ? (
+                        <Alert className="bg-green-50 border-green-200">
+                          <AlertDescription>
+                            You have already voted in this election
+                          </AlertDescription>
+                        </Alert>
+                      ) : (
+                        <div className="space-y-4">
+                          {candidates.map((candidate) => (
+                            <div key={candidate.id} className="p-4 border rounded-lg flex justify-between items-center">
+                              <div className="flex items-center space-x-4">
+                                {candidate.logoIPFS && (
+                                  <img 
+                                    src={candidate.logoIPFS.replace('ipfs://', 'https://ipfs.io/ipfs/')} 
+                                    alt={`${candidate.name}'s logo`}
+                                    className="w-12 h-12 rounded-full object-cover"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src = '/placeholder.svg';
+                                    }}
+                                  />
+                                )}
+                                <div>
+                                  <p className="font-semibold">{candidate.name}</p>
+                                  <p className="text-sm text-gray-600">{candidate.party}</p>
+                                  <p className="text-xs text-gray-500">{candidate.tagline}</p>
+                                </div>
+                              </div>
+                              <Button
+                                onClick={() => handleVote(candidate.id)}
+                                disabled={isVoting}
+                                className="ml-4"
+                              >
+                                {isVoting ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <>
+                                    <Vote className="h-4 w-4 mr-2" />
+                                    Vote
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
               <div className="flex justify-center">
                 <Button 
                   onClick={checkVoterEligibility}
@@ -138,6 +321,31 @@ export const VoterDashboard = () => {
                 </Button>
               </div>
             </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle>Past Elections</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {electionActive ? (
+            <Alert>
+              <AlertDescription>
+                Election is currently in progress
+              </AlertDescription>
+            </Alert>
+          ) : pastElections.length === 0 ? (
+            <Alert>
+              <AlertDescription>
+                No past elections found
+              </AlertDescription>
+            </Alert>
+          ) : (
+            pastElections.map((election) => (
+              <ElectionResults key={String(election.id)} election={election} />
+            ))
           )}
         </CardContent>
       </Card>
