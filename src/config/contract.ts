@@ -21,7 +21,7 @@ export const CONTRACT_ABI = [
     "inputs": [
       {
         "internalType": "address",
-        "name": "",
+        "name": "_voter",
         "type": "address"
       }
     ],
