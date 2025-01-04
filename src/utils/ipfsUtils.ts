@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { PINATA_API_KEY, PINATA_SECRET_KEY } from '@/config/contract';
 
 export const uploadToIPFS = async (file: File): Promise<string> => {
   try {
@@ -11,14 +10,21 @@ export const uploadToIPFS = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append('file', file);
 
+    const pinataApiKey = import.meta.env.VITE_PINATA_API_KEY;
+    const pinataSecretKey = import.meta.env.VITE_PINATA_SECRET_KEY;
+
+    if (!pinataApiKey || !pinataSecretKey) {
+      throw new Error('Pinata API credentials are not configured');
+    }
+
     const response = await axios.post(
       'https://api.pinata.cloud/pinning/pinFileToIPFS',
       formData,
       {
         maxBodyLength: Infinity,
         headers: {
-          pinata_api_key: PINATA_API_KEY,
-          pinata_secret_api_key: PINATA_SECRET_KEY,
+          'pinata_api_key': pinataApiKey,
+          'pinata_secret_api_key': pinataSecretKey,
         }
       }
     );
