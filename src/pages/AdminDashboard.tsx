@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { ElectionResults } from "@/components/ElectionResults";
+import { ElectionTimer } from "@/components/ElectionTimer";
 import { getElectionStatus, getElectionHistory, getTotalElections } from "@/utils/electionUtils";
 import type { ElectionHistory } from "@/utils/electionUtils";
 
@@ -12,6 +13,7 @@ export const AdminDashboard = () => {
   const [isElectionActive, setIsElectionActive] = useState(false);
   const [pastElections, setPastElections] = useState<ElectionHistory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [electionStatus, setElectionStatus] = useState<any>(null);
 
   useEffect(() => {
     const fetchElectionData = async () => {
@@ -19,6 +21,7 @@ export const AdminDashboard = () => {
         setIsLoading(true);
         const status = await getElectionStatus();
         setIsElectionActive(status.isActive);
+        setElectionStatus(status);
 
         const totalElections = await getTotalElections();
         const elections = [];
@@ -59,6 +62,10 @@ export const AdminDashboard = () => {
         </AlertDescription>
       </Alert>
       
+      {isElectionActive && (
+        <ElectionTimer endTime={Number(electionStatus?.endTime)} />
+      )}
+
       <div className="grid md:grid-cols-2 gap-6">
         <VoterManagement />
         <CandidateManagement />
