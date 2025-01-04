@@ -8,9 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import type { Candidate } from "@/types/election";
+import { useAccount } from "wagmi";
 
 export const CandidateList = () => {
   const { toast } = useToast();
+  const { address } = useAccount();
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [removingId, setRemovingId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,6 +61,8 @@ export const CandidateList = () => {
   }, []);
 
   const handleRemove = async (id: number) => {
+    if (!address) return;
+    
     try {
       setRemovingId(id);
       const result = await writeContract(config, {
@@ -67,6 +71,7 @@ export const CandidateList = () => {
         functionName: 'removeCandidate',
         args: [BigInt(id)],
         chain: sepolia,
+        account: address,
       });
 
       const publicClient = await getPublicClient(config);
@@ -90,6 +95,12 @@ export const CandidateList = () => {
     } finally {
       setRemovingId(null);
     }
+  };
+
+  const formatIPFSUrl = (ipfsUrl: string) => {
+    if (!ipfsUrl) return '';
+    // Convert IPFS URL to HTTP gateway URL
+    return ipfsUrl.replace('ipfs://', 'https://ipfs.io/ipfs/');
   };
 
   if (isLoading) {
@@ -116,18 +127,32 @@ export const CandidateList = () => {
         ) : (
           <div className="space-y-4">
             {candidates.map(candidate => (
-              <div key={candidate.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <h3 className="font-medium">{candidate.name}</h3>
-                  <p className="text-sm text-gray-500">{candidate.party}</p>
-                  {candidate.tagline && (
-                    <p className="text-sm text-gray-600 mt-1">{candidate.tagline}</p>
+              <div key={candidate.id} className="flex items-start justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-start space-x-4">
+                  {candidate.logoIPFS && (
+                    <img 
+                      src={formatIPFSUrl(candidate.logoIPFS)} 
+                      alt={`${candidate.name}'s logo`}
+                      className="w-16 h-16 object-cover rounded-lg"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = '/placeholder.svg';
+                      }}
+                    />
                   )}
+                  <div>
+                    <h3 className="font-medium">{candidate.name}</h3>
+                    <p className="text-sm text-gray-500">{candidate.party}</p>
+                    {candidate.tagline && (
+                      <p className="text-sm text-gray-600 mt-1">{candidate.tagline}</p>
+                    )}
+                  </div>
                 </div>
                 <Button 
                   variant="destructive"
                   onClick={() => handleRemove(candidate.id)} 
                   disabled={removingId === candidate.id}
+                  className="ml-4"
                 >
                   {removingId === candidate.id ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

@@ -1,38 +1,46 @@
-import { Loader2 } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useEffect, useState } from "react";
+import { readContract } from '@wagmi/core';
+import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
+import { config } from "@/config/web3";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent } from "@/components/ui/card";
 
-interface VoterListProps {
-  voters: string[];
-  isLoading: boolean;
-  onRemove: (voterAddress: string) => Promise<void>;
-}
+export const VoterList = () => {
+  const [voters, setVoters] = useState<string[]>([]);
 
-export const VoterList = ({ voters, isLoading, onRemove }: VoterListProps) => {
-  if (isLoading) {
-    return (
-      <div className="flex justify-center">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
-    );
-  }
+  useEffect(() => {
+    const fetchVoters = async () => {
+      try {
+        const data = await readContract(config, {
+          address: CONTRACT_ADDRESS as `0x${string}`,
+          abi: CONTRACT_ABI,
+          functionName: 'getAllVoters',
+        }) as string[];
+        setVoters(data);
+      } catch (error) {
+        console.error("Failed to fetch voters:", error);
+      }
+    };
 
-  if (voters.length === 0) {
-    return (
-      <Alert>
-        <AlertDescription>
-          No voters found.
-        </AlertDescription>
-      </Alert>
-    );
-  }
+    fetchVoters();
+  }, []);
 
   return (
-    <div className="space-y-2">
-      {voters.map((voter) => (
-        <div key={voter} className="p-3 border rounded flex justify-between items-center">
-          <span className="font-mono">{voter}</span>
-        </div>
-      ))}
-    </div>
+    <Card className="mt-4">
+      <CardContent className="p-4">
+        <ScrollArea className="h-[200px] rounded-md border p-4">
+          {voters.map((voter, index) => (
+            <div
+              key={voter}
+              className="flex items-center py-2 border-b last:border-0"
+            >
+              <span className="text-sm font-medium truncate hover:text-clip">
+                {voter}
+              </span>
+            </div>
+          ))}
+        </ScrollArea>
+      </CardContent>
+    </Card>
   );
 };
