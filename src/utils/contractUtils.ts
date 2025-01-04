@@ -8,7 +8,6 @@ export const getAdminAddress = async () => {
       address: CONTRACT_ADDRESS as `0x${string}`,
       abi: CONTRACT_ABI,
       functionName: 'admin',
-      chainId: sepolia.id,
     });
     return data as string;
   } catch (error) {
@@ -24,7 +23,6 @@ export const checkVoterStatus = async (address: string) => {
       abi: CONTRACT_ABI,
       functionName: 'voters',
       args: [address],
-      chainId: sepolia.id,
     });
     return Boolean(data);
   } catch (error) {
