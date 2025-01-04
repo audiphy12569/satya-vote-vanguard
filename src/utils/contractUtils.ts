@@ -15,16 +15,16 @@ export const writeContractWithConfirmation = async (
   functionName: ContractFunction,
   args: readonly unknown[],
   address?: `0x${string}`
-): Promise<{ hash: `0x${string}` }> => {
+): Promise<{ hash: `0x${string}`; }> => {
   try {
     const result = await writeContract(config, {
       address: CONTRACT_ADDRESS as `0x${string}`,
       abi: CONTRACT_ABI,
       functionName,
-      args,
+      args: args as any[],
       chain: sepolia,
       account: address,
-    }) as `0x${string}`;
+    });
 
     return { hash: result };
   } catch (error) {
@@ -48,43 +48,16 @@ export const checkVoterStatus = async (address: `0x${string}`): Promise<boolean>
   }
 };
 
-export const getAdminAddress = async (): Promise<string> => {
+export const getAdminAddress = async (): Promise<`0x${string}`> => {
   try {
     const data = await readContract(config, {
       address: CONTRACT_ADDRESS as `0x${string}`,
       abi: CONTRACT_ABI,
       functionName: 'admin',
-    }) as `0x${string}`;
-    return data;
+    });
+    return data as `0x${string}`;
   } catch (error) {
     console.error("Error fetching admin address:", error);
-    throw error;
-  }
-};
-
-export const getElectionHistory = async (electionId: number) => {
-  try {
-    const data = await readContract(config, {
-      address: CONTRACT_ADDRESS as `0x${string}`,
-      abi: CONTRACT_ABI,
-      functionName: 'getElectionHistory',
-      args: [BigInt(electionId)],
-    });
-    
-    return {
-      id: data[0],
-      startTime: data[1],
-      endTime: data[2],
-      totalVotes: data[3],
-      results: data[4].map((result: any) => ({
-        candidateId: result.candidateId,
-        candidateName: result.candidateName,
-        party: result.party,
-        voteCount: result.voteCount
-      }))
-    };
-  } catch (error) {
-    console.error("Error fetching election history:", error);
     throw error;
   }
 };

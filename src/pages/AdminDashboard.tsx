@@ -6,7 +6,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useState, useEffect } from "react";
 import { ElectionResults } from "@/components/ElectionResults";
 import { ElectionTimer } from "@/components/ElectionTimer";
-import { getElectionStatus, getElectionHistory, getTotalElections } from "@/utils/electionUtils";
+import { getElectionStatus } from "@/utils/electionUtils";
+import { fetchElectionHistory } from "@/utils/electionHistoryUtils";
 import type { ElectionHistory } from "@/utils/electionUtils";
 
 export const AdminDashboard = () => {
@@ -23,19 +24,8 @@ export const AdminDashboard = () => {
         setIsElectionActive(status.isActive);
         setElectionStatus(status);
 
-        const totalElections = await getTotalElections();
-        const elections = [];
-        
-        for (let i = 1; i <= totalElections; i++) {
-          try {
-            const election = await getElectionHistory(i);
-            elections.push(election);
-          } catch (error) {
-            console.error(`Failed to fetch election #${i}:`, error);
-          }
-        }
-        
-        setPastElections(elections.sort((a, b) => Number(b.id - a.id)));
+        const elections = await fetchElectionHistory();
+        setPastElections(elections);
       } catch (error) {
         console.error("Failed to fetch election data:", error);
       } finally {
