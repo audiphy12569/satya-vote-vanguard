@@ -18,11 +18,12 @@ const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
   party: z.string().min(1, "Party is required"),
   tagline: z.string().optional(),
-  logo: z.instanceof(File, { message: "Please select a valid logo file" })
-    .refine(
-      (file) => file.type.startsWith('image/'),
-      "Please upload a valid image file"
-    ),
+  logo: z.custom<File>((val) => val instanceof File, {
+    message: "Please select a valid logo file",
+  }).refine(
+    (file) => file.type.startsWith('image/'),
+    "Please upload a valid image file"
+  )
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -107,7 +108,12 @@ export const CandidateForm = ({ onSuccess }: { onSuccess?: () => void }) => {
               id="logo" 
               type="file" 
               accept="image/*"
-              {...form.register("logo")}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  form.setValue("logo", file);
+                }
+              }}
             />
             {form.formState.errors.logo && (
               <p className="text-sm text-red-500">{form.formState.errors.logo.message}</p>
