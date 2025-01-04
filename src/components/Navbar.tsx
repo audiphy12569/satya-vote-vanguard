@@ -6,7 +6,14 @@ import { useToast } from "@/hooks/use-toast";
 import { sepolia } from "wagmi/chains";
 import { useChainId } from "wagmi";
 import { getAdminAddress, checkVoterStatus } from "@/utils/contractUtils";
-import { Users, UserPlus, Vote } from "lucide-react";
+import { Users, UserPlus, Vote, Globe2 } from "lucide-react";
+import { useTranslation } from 'react-i18next';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Navbar = () => {
   const { address, isConnected } = useAccount();
@@ -18,6 +25,7 @@ export const Navbar = () => {
   const location = useLocation();
   const [adminAddress, setAdminAddress] = useState<string | null>(null);
   const [isVerifiedVoter, setIsVerifiedVoter] = useState<boolean>(false);
+  const { t, i18n } = useTranslation();
 
   const fetchAdminAddress = async () => {
     try {
@@ -109,6 +117,10 @@ export const Navbar = () => {
     }
   };
 
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
+  };
+
   return (
     <nav className="bg-white dark:bg-gray-900 shadow-lg animate-fade-in border-b border-gray-200 dark:border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -138,7 +150,7 @@ export const Navbar = () => {
                       : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"}`}
                 >
                   <Users className="w-4 h-4" />
-                  <span>Voters</span>
+                  <span>{t('nav.voters')}</span>
                 </button>
                 <button 
                   onClick={() => handleNavigation("/admin/candidates")}
@@ -148,7 +160,7 @@ export const Navbar = () => {
                       : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"}`}
                 >
                   <UserPlus className="w-4 h-4" />
-                  <span>Candidates</span>
+                  <span>{t('nav.candidates')}</span>
                 </button>
                 <button 
                   onClick={() => handleNavigation("/admin/election")}
@@ -158,7 +170,7 @@ export const Navbar = () => {
                       : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"}`}
                 >
                   <Vote className="w-4 h-4" />
-                  <span>Election</span>
+                  <span>{t('nav.election')}</span>
                 </button>
               </div>
             )}
@@ -167,9 +179,26 @@ export const Navbar = () => {
           <div className="flex items-center space-x-4">
             {chainId !== sepolia.id && (
               <span className="text-sm text-red-500 animate-pulse">
-                Wrong Network
+                {t('common.wrongNetwork')}
               </span>
             )}
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Globe2 className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => changeLanguage('en')}>
+                  English
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => changeLanguage('hi')}>
+                  हिंदी
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             {isConnected ? (
               <div className="flex items-center space-x-4">
                 <span className="text-sm text-gray-600 dark:text-gray-300">
@@ -183,7 +212,7 @@ export const Navbar = () => {
                     navigate("/");
                   }}
                 >
-                  Disconnect
+                  {t('common.disconnect')}
                 </Button>
               </div>
             ) : (

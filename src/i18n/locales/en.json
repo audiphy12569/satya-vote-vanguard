@@ -1,0 +1,48 @@
+{
+  "common": {
+    "connect": "Connect Wallet",
+    "disconnect": "Disconnect",
+    "wrongNetwork": "Wrong Network",
+    "welcome": {
+      "admin": "Welcome Admin",
+      "voter": "Welcome Voter"
+    }
+  },
+  "nav": {
+    "voters": "Voters",
+    "candidates": "Candidates",
+    "election": "Election"
+  },
+  "voter": {
+    "status": {
+      "checking": "Checking eligibility...",
+      "verified": "You are verified to vote",
+      "notVerified": "Not Verified",
+      "contactAdmin": "You are not verified to vote. Please contact the admin to get verified.",
+      "refresh": "Refresh Status"
+    },
+    "voting": {
+      "alreadyVoted": "You have already voted in this election",
+      "electionEnded": "This election has ended",
+      "vote": "Vote"
+    }
+  },
+  "admin": {
+    "redirected": "You have been redirected to the admin dashboard.",
+    "candidates": {
+      "title": "Candidate Management",
+      "add": "Add Candidate",
+      "remove": "Remove"
+    },
+    "voters": {
+      "title": "Voter Management",
+      "approve": "Approve",
+      "remove": "Remove All Voters"
+    },
+    "election": {
+      "title": "Election Control",
+      "start": "Start Election",
+      "end": "End Election"
+    }
+  }
+}
