@@ -21,8 +21,8 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
     // Set up timer to check if election has ended
     if (isLive) {
       const checkElectionEnd = async () => {
-        const now = Date.now();
-        const endTime = Number(election.endTime) * 1000;
+        const now = Date.now() / 1000;
+        const endTime = Number(election.endTime);
         
         if (now >= endTime) {
           try {
@@ -55,7 +55,7 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
       
       // Check immediately and then set up interval
       checkElectionEnd();
-      const timer = setInterval(checkElectionEnd, 1000);
+      const timer = setInterval(checkElectionEnd, 5000); // Check every 5 seconds
       return () => clearInterval(timer);
     }
   }, [election, isLive, toast]);
@@ -77,7 +77,7 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
   };
 
   const isElectionOver = () => {
-    return !isLive && Number(currentResults.endTime) * 1000 < Date.now();
+    return Date.now() / 1000 > Number(currentResults.endTime);
   };
 
   // Don't show results if the election ID is 0 (invalid)
@@ -90,7 +90,7 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
       <CardHeader>
         <CardTitle className="text-lg">
           {isLive ? (
-            "Current Election Results (Live)"
+            "Current Election Results"
           ) : (
             <>
               Election #{Number(currentResults.id)} Results

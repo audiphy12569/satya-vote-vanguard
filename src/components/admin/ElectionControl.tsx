@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -10,7 +10,20 @@ export const ElectionControl = () => {
   const { toast } = useToast();
   const [isStarting, setIsStarting] = useState(false);
   const [duration, setDuration] = useState<number>(60);
+  const [isElectionActive, setIsElectionActive] = useState(false);
   const { address } = useAccount();
+
+  useEffect(() => {
+    const checkElectionStatus = async () => {
+      const status = await getElectionStatus();
+      setIsElectionActive(status.isActive);
+    };
+    
+    checkElectionStatus();
+    const interval = setInterval(checkElectionStatus, 10000); // Check every 10 seconds
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const handleStartElection = async () => {
     try {
@@ -35,19 +48,6 @@ export const ElectionControl = () => {
         return;
       }
 
-      // Check current election status first
-      const currentStatus = await getElectionStatus();
-      
-      // If there's an active election that hasn't ended yet
-      if (currentStatus.isActive && Date.now() / 1000 <= Number(currentStatus.endTime)) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Cannot start new election while current election is active",
-        });
-        return;
-      }
-
       // Start new election
       await writeContractWithConfirmation(
         'startElection',
@@ -61,7 +61,8 @@ export const ElectionControl = () => {
       });
       
       // Refresh election status
-      await getElectionStatus();
+      const status = await getElectionStatus();
+      setIsElectionActive(status.isActive);
     } catch (error) {
       console.error("Failed to start election:", error);
       toast({
@@ -85,11 +86,20 @@ export const ElectionControl = () => {
           onChange={(e) => setDuration(Number(e.target.value))}
           placeholder="Duration in minutes"
           className="w-48"
+          disabled={isElectionActive}
         />
-        <Button onClick={handleStartElection} disabled={isStarting}>
+        <Button 
+          onClick={handleStartElection} 
+          disabled={isStarting || isElectionActive}
+        >
           {isStarting ? "Starting..." : "Start Election"}
         </Button>
       </div>
+      {isElectionActive && (
+        <p className="text-sm text-yellow-600">
+          Cannot start a new election while current election is active
+        </p>
+      )}
     </div>
   );
 };

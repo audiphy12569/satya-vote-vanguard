@@ -28,6 +28,8 @@ export const CurrentElectionVoting = ({
   isVoting,
   onVote,
 }: CurrentElectionVotingProps) => {
+  const isElectionEnded = Date.now() / 1000 > endTime;
+
   return (
     <div className="space-y-4">
       <ElectionTimer endTime={endTime} />
@@ -41,6 +43,12 @@ export const CurrentElectionVoting = ({
             <Alert className="bg-green-50 border-green-200">
               <AlertDescription>
                 You have already voted in this election
+              </AlertDescription>
+            </Alert>
+          ) : isElectionEnded ? (
+            <Alert className="bg-yellow-50 border-yellow-200">
+              <AlertDescription>
+                This election has ended
               </AlertDescription>
             </Alert>
           ) : (
@@ -72,7 +80,7 @@ export const CurrentElectionVoting = ({
                   </div>
                   <Button
                     onClick={() => onVote(candidate.id)}
-                    disabled={isVoting}
+                    disabled={isVoting || hasUserVoted || isElectionEnded}
                     className="ml-4"
                   >
                     {isVoting ? (
