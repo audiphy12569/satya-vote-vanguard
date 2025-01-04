@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { VoterList } from "@/components/admin/VoterList";
-import { VoterActions } from "@/components/admin/VoterActions";
+import { VoterList } from "@/components/admin/voter/VoterList";
+import { VoterActions } from "@/components/admin/voter/VoterActions";
 import { Loader2, Trash2 } from "lucide-react";
 import { writeContractWithConfirmation } from "@/utils/contractUtils";
 import { useToast } from "@/hooks/use-toast";
@@ -78,28 +78,16 @@ export const VoterManagement = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <VoterActions onApprove={handleApproveVoter} />
+            <VoterActions 
+              onApprove={handleApproveVoter} 
+              onRemoveAll={handleRemoveAllVoters}
+              isLoading={isLoading}
+            />
             <VoterList 
               voters={voters} 
               isLoading={isLoading} 
               onRemove={() => {}} // Empty function since individual removal is not supported
             />
-            <div className="mt-6">
-              <Button
-                variant="destructive"
-                onClick={handleRemoveAllVoters}
-                disabled={isLoading || voters.length === 0}
-              >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Remove All Voters
-                  </>
-                )}
-              </Button>
-            </div>
           </div>
         </CardContent>
       </Card>

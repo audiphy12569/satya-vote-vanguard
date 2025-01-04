@@ -1,7 +1,7 @@
 import { Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-export interface VoterListProps {
+interface VoterListProps {
   voters: string[];
   isLoading: boolean;
   onRemove: (voterAddress: string) => Promise<void>;
