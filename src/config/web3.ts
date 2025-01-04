@@ -11,6 +11,13 @@ export const config = createConfig({
     [sepolia.id]: http(`https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`),
   },
   connectors: [
-    walletConnect({ projectId }),
+    walletConnect({ 
+      projectId,
+      showQrModal: true,
+      metadata: {
+        name: 'Satya Vote',
+        description: 'Secure, Transparent, and Decentralized Voting System',
+      }
+    }),
   ],
 });

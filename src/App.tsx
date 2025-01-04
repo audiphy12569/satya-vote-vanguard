@@ -8,7 +8,6 @@ import { Landing } from "./pages/Landing";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { VoterDashboard } from "./pages/VoterDashboard";
 import { ElectionHistory } from "./pages/ElectionHistory";
-import { useEffect } from "react";
 
 const queryClient = new QueryClient();
 

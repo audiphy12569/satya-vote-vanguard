@@ -1,13 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { useNavigate } from "react-router-dom";
-import { injected, walletConnect } from "wagmi/connectors";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { walletConnect } from "wagmi/connectors";
+import { useEffect } from "react";
+
+const ADMIN_ADDRESS = "0x123..."; // Replace with your actual admin address
 
 export const Navbar = () => {
   const { address, isConnected } = useAccount();
@@ -15,21 +12,28 @@ export const Navbar = () => {
   const { disconnect } = useDisconnect();
   const navigate = useNavigate();
 
-  const handleConnect = async (connector: 'metamask' | 'walletconnect') => {
+  const handleConnect = async () => {
     try {
-      if (connector === 'metamask') {
-        await connect({ connector: injected() });
-      } else {
-        await connect({ 
-          connector: walletConnect({ 
-            projectId: import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID 
-          })
-        });
-      }
+      await connect({ 
+        connector: walletConnect({ 
+          projectId: import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID 
+        })
+      });
     } catch (error) {
       console.error("Failed to connect wallet:", error);
     }
   };
+
+  useEffect(() => {
+    if (isConnected && address) {
+      // Check if connected address is admin
+      if (address.toLowerCase() === ADMIN_ADDRESS.toLowerCase()) {
+        navigate("/admin");
+      } else {
+        navigate("/voter");
+      }
+    }
+  }, [isConnected, address, navigate]);
 
   return (
     <nav className="bg-white dark:bg-gray-800 shadow-lg">
@@ -44,19 +48,6 @@ export const Navbar = () => {
             </span>
           </div>
           <div className="flex items-center space-x-4">
-            {isConnected && (
-              <div className="hidden md:flex space-x-4">
-                <Button variant="ghost" onClick={() => navigate("/admin")}>
-                  Admin
-                </Button>
-                <Button variant="ghost" onClick={() => navigate("/voter")}>
-                  Vote
-                </Button>
-                <Button variant="ghost" onClick={() => navigate("/history")}>
-                  History
-                </Button>
-              </div>
-            )}
             {isConnected ? (
               <div className="flex items-center space-x-4">
                 <span className="text-sm text-gray-600 dark:text-gray-300">
@@ -64,27 +55,21 @@ export const Navbar = () => {
                 </span>
                 <Button
                   variant="outline"
-                  onClick={() => disconnect()}
+                  onClick={() => {
+                    disconnect();
+                    navigate("/");
+                  }}
                 >
                   Disconnect
                 </Button>
               </div>
             ) : (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button className="bg-purple-600 hover:bg-purple-700 text-white">
-                    Connect Wallet
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => handleConnect('metamask')}>
-                    MetaMask
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleConnect('walletconnect')}>
-                    WalletConnect
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button 
+                onClick={handleConnect}
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                Connect Wallet
+              </Button>
             )}
           </div>
         </div>
