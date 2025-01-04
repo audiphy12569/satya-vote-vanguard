@@ -26,8 +26,17 @@ export const config = createConfig({
       },
       qrModalOptions: {
         themeMode: "dark",
-        desktopWallets: ["metamask", "brave", "zerion", "ledger"],
-        mobileWallets: ["metamask", "rainbow", "zerion", "ledger"],
+        desktopWallets: [
+          { id: "c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96", name: "MetaMask", links: { native: "metamask:", universal: "https://metamask.io" } },
+          { id: "brave", name: "Brave Wallet", links: { native: "brave:", universal: "https://brave.com/wallet" } },
+          { id: "1ae92b26df02f0abca6304df07debccd18262fdf5fe82daa81593582dac9a369", name: "Rainbow", links: { native: "rainbow:", universal: "https://rainbow.me" } },
+          { id: "4622a2b2d6af1c9844944291e5e7351a6aa24cd7b23099efac1b2fd875da31a0", name: "Trust", links: { native: "trust:", universal: "https://trustwallet.com" } }
+        ],
+        mobileWallets: [
+          { id: "c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96", name: "MetaMask", links: { native: "metamask:", universal: "https://metamask.io" } },
+          { id: "1ae92b26df02f0abca6304df07debccd18262fdf5fe82daa81593582dac9a369", name: "Rainbow", links: { native: "rainbow:", universal: "https://rainbow.me" } },
+          { id: "4622a2b2d6af1c9844944291e5e7351a6aa24cd7b23099efac1b2fd875da31a0", name: "Trust", links: { native: "trust:", universal: "https://trustwallet.com" } }
+        ],
         explorerRecommendedWalletIds: [
           "c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96", // MetaMask
           "1ae92b26df02f0abca6304df07debccd18262fdf5fe82daa81593582dac9a369", // Rainbow
