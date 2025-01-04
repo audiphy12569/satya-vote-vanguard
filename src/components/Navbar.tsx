@@ -5,15 +5,13 @@ import { injected } from "wagmi/connectors";
 
 export const Navbar = () => {
   const { address, isConnected } = useAccount();
-  const { connect } = useConnect({
-    connector: injected()
-  });
+  const { connect } = useConnect();
   const { disconnect } = useDisconnect();
   const navigate = useNavigate();
 
   const handleConnect = async () => {
     try {
-      await connect();
+      await connect({ connector: injected() });
     } catch (error) {
       console.error("Failed to connect wallet:", error);
     }
