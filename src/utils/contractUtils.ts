@@ -22,7 +22,7 @@ export const checkVoterStatus = async (address: string) => {
       address: CONTRACT_ADDRESS as `0x${string}`,
       abi: CONTRACT_ABI,
       functionName: 'voters',
-      args: [address],
+      args: [address as `0x${string}`],
     });
     return Boolean(data);
   } catch (error) {
