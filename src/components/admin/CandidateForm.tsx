@@ -1,136 +1,100 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
+import { useAccount } from "wagmi";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { toast } from "@/hooks/use-toast";
 import { writeContract, getPublicClient } from '@wagmi/core';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
-import { Loader2 } from "lucide-react";
 import { config } from "@/config/web3";
 import { sepolia } from "wagmi/chains";
-import { useAccount } from "wagmi";
-import axios from 'axios';
 
-export const CandidateForm = ({ onCandidateAdded }: { onCandidateAdded: () => Promise<void> }) => {
-  const { toast } = useToast();
+const formSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  party: z.string().min(1, "Party is required"),
+  tagline: z.string().optional(),
+  logo: z.instanceof(File).refine(file => file.size <= 2 * 1024 * 1024, {
+    message: "File size must be less than 2MB",
+  }),
+});
+
+export const CandidateForm = ({ onSuccess }: { onSuccess?: () => void }) => {
   const { address } = useAccount();
-  const [candidateForm, setCandidateForm] = useState({
-    name: "",
-    party: "",
-    tagline: "",
-  });
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const uploadToIPFS = async (file: File) => {
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await axios.post('https://api.pinata.cloud/pinning/pinFileToIPFS', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'pinata_api_key': import.meta.env.VITE_PINATA_API_KEY,
-          'pinata_secret_api_key': import.meta.env.VITE_PINATA_SECRET_KEY,
-        },
-      });
-
-      return `ipfs://${response.data.IpfsHash}`;
-    } catch (error) {
-      console.error('Error uploading to IPFS:', error);
-      throw new Error('Failed to upload image to IPFS');
-    }
-  };
-
-  const handleAddCandidate = async () => {
-    try {
-      setIsLoading(true);
-      if (!selectedFile) {
-        throw new Error("Please select a logo file");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const form = useForm({
+    resolver: async (data) => {
+      try {
+        await formSchema.parseAsync(data);
+        return { values: data, errors: {} };
+      } catch (error) {
+        return { values: {}, errors: error.flatten().fieldErrors };
       }
+    },
+  });
 
-      const ipfsHash = await uploadToIPFS(selectedFile);
+  const handleSubmit = async (data: z.infer<typeof formSchema>) => {
+    if (!address) return;
+
+    try {
+      setIsSubmitting(true);
+      const ipfsHash = await uploadToIPFS(data.logo[0]);
       
-      const { hash } = await writeContract(config, {
+      const result = await writeContract(config, {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
         functionName: 'addCandidate',
-        args: [
-          candidateForm.name,
-          candidateForm.party,
-          candidateForm.tagline,
-          ipfsHash,
-        ],
+        args: [data.name, data.party, data.tagline, ipfsHash],
         chain: sepolia,
         account: address,
-      }) as { hash: `0x${string}` };
-
-      toast({
-        title: "Transaction Submitted",
-        description: "Please wait for confirmation...",
-        variant: "default",
       });
 
       const publicClient = await getPublicClient(config);
-      await publicClient.waitForTransactionReceipt({ hash });
-      
-      toast({
-        title: "Transaction Successful",
-        description: `Candidate ${candidateForm.name} has been added successfully.`,
-        variant: "default",
+      await publicClient.waitForTransactionReceipt({ 
+        hash: result.hash as `0x${string}` 
       });
-      
-      await onCandidateAdded();
-      setCandidateForm({ name: "", party: "", tagline: "" });
-      setSelectedFile(null);
+
+      toast({
+        title: "Success",
+        description: "Candidate added successfully",
+      });
+
+      form.reset();
+      onSuccess?.();
     } catch (error) {
       console.error("Failed to add candidate:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to add candidate."
+        description: "Failed to add candidate",
       });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Add Candidate</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Input
-          placeholder="Name"
-          value={candidateForm.name}
-          onChange={(e) => setCandidateForm({...candidateForm, name: e.target.value})}
-        />
-        <Input
-          placeholder="Party"
-          value={candidateForm.party}
-          onChange={(e) => setCandidateForm({...candidateForm, party: e.target.value})}
-        />
-        <Input
-          placeholder="Tagline"
-          value={candidateForm.tagline}
-          onChange={(e) => setCandidateForm({...candidateForm, tagline: e.target.value})}
-        />
-        <Input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-          className="cursor-pointer"
-        />
-        <Button 
-          onClick={handleAddCandidate} 
-          className="w-full"
-          disabled={isLoading}
-        >
-          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Add Candidate
-        </Button>
-      </CardContent>
-    </Card>
+    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+      <div>
+        <label>Name</label>
+        <input {...form.register("name")} />
+        {form.formState.errors.name && <p>{form.formState.errors.name.message}</p>}
+      </div>
+      <div>
+        <label>Party</label>
+        <input {...form.register("party")} />
+        {form.formState.errors.party && <p>{form.formState.errors.party.message}</p>}
+      </div>
+      <div>
+        <label>Tagline</label>
+        <input {...form.register("tagline")} />
+      </div>
+      <div>
+        <label>Logo</label>
+        <input type="file" {...form.register("logo")} />
+        {form.formState.errors.logo && <p>{form.formState.errors.logo.message}</p>}
+      </div>
+      <button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? "Submitting..." : "Add Candidate"}
+      </button>
+    </form>
   );
 };

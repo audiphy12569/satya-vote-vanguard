@@ -1,40 +1,56 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useToast } from "@/hooks/use-toast";
+import { useEffect, useState } from "react";
 import { writeContract, getPublicClient } from '@wagmi/core';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
-import { Loader2, Trash2 } from "lucide-react";
 import { config } from "@/config/web3";
-import { sepolia } from "wagmi/chains";
-import { useAccount } from "wagmi";
+import { useToast } from "@/hooks/use-toast";
 
-interface Candidate {
-  id: number;
-  name: string;
-  party: string;
-  tagline: string;
-  logoIPFS: string;
-  voteCount: bigint;
-}
-
-interface CandidateListProps {
-  candidates: Candidate[];
-  isLoading: boolean;
-  onCandidateDeleted: () => Promise<void>;
-}
-
-export const CandidateList = ({ candidates, isLoading, onCandidateDeleted }: CandidateListProps) => {
+export const CandidateList = () => {
   const { toast } = useToast();
-  const { address } = useAccount();
-  const [isDeletingId, setIsDeletingId] = useState<number | null>(null);
+  const [candidates, setCandidates] = useState<any[]>([]);
+  const [removingId, setRemovingId] = useState<number | null>(null);
+  const [address, setAddress] = useState<string | null>(null); // Assume you have a way to get the user's address
 
-  const handleDeleteCandidate = async (id: number) => {
+  const fetchCandidates = async () => {
     try {
-      setIsDeletingId(id);
+      const count = await readContract(config, {
+        address: CONTRACT_ADDRESS as `0x${string}`,
+        abi: CONTRACT_ABI,
+        functionName: 'getCandidateCount',
+      });
 
-      const { hash } = await writeContract(config, {
+      const candidatesData = [];
+      for (let i = 1; i <= Number(count); i++) {
+        const candidate = await readContract(config, {
+          address: CONTRACT_ADDRESS as `0x${string}`,
+          abi: CONTRACT_ABI,
+          functionName: 'getCandidate',
+          args: [BigInt(i)],
+        });
+        candidatesData.push({
+          id: i,
+          name: candidate[0],
+          party: candidate[1],
+          tagline: candidate[2],
+          logoIPFS: candidate[3],
+          voteCount: candidate[4],
+        });
+      }
+      setCandidates(candidatesData);
+    } catch (error) {
+      console.error("Failed to fetch candidates:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCandidates();
+  }, []);
+
+  const handleRemove = async (id: number) => {
+    if (!address) return;
+
+    try {
+      setRemovingId(id);
+      const result = await writeContract(config, {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
         functionName: 'removeCandidate',
@@ -43,89 +59,49 @@ export const CandidateList = ({ candidates, isLoading, onCandidateDeleted }: Can
         account: address,
       });
 
-      toast({
-        title: "Transaction Submitted",
-        description: "Please wait for confirmation...",
-        variant: "default",
+      const publicClient = await getPublicClient(config);
+      await publicClient.waitForTransactionReceipt({ 
+        hash: result.hash as `0x${string}` 
       });
 
-      const publicClient = await getPublicClient(config);
-      await publicClient.waitForTransactionReceipt({ hash });
-      
       toast({
-        title: "Transaction Successful",
-        description: "Candidate has been removed successfully.",
-        variant: "default",
+        title: "Success",
+        description: "Candidate removed successfully",
       });
-      
-      await onCandidateDeleted();
+
+      fetchCandidates();
     } catch (error) {
       console.error("Failed to remove candidate:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to remove candidate."
+        description: "Failed to remove candidate",
       });
     } finally {
-      setIsDeletingId(null);
+      setRemovingId(null);
     }
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Candidates List</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="flex justify-center">
-            <Loader2 className="h-6 w-6 animate-spin" />
-          </div>
-        ) : candidates.length === 0 ? (
-          <Alert>
-            <AlertDescription>
-              No candidates found. Add a candidate to get started.
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <div className="space-y-2">
-            {candidates.map((candidate) => (
-              <div key={candidate.id} className="p-3 border rounded flex justify-between items-center">
-                <div className="flex items-center space-x-4">
-                  {candidate.logoIPFS && (
-                    <img 
-                      src={candidate.logoIPFS.replace('ipfs://', 'https://ipfs.io/ipfs/')} 
-                      alt={`${candidate.name}'s logo`}
-                      className="w-10 h-10 rounded-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/placeholder.svg';
-                      }}
-                    />
-                  )}
-                  <div>
-                    <p className="font-semibold">{candidate.name}</p>
-                    <p className="text-sm text-gray-600">{candidate.party}</p>
-                    <p className="text-xs text-gray-500">{candidate.tagline}</p>
-                  </div>
-                </div>
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => handleDeleteCandidate(candidate.id)}
-                  disabled={isDeletingId === candidate.id}
-                >
-                  {isDeletingId === candidate.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+    <div>
+      <h2 className="text-lg font-bold">Candidate List</h2>
+      <ul>
+        {candidates.map(candidate => (
+          <li key={candidate.id} className="flex justify-between items-center">
+            <div>
+              <p>{candidate.name} ({candidate.party})</p>
+              <p>{candidate.tagline}</p>
+            </div>
+            <button 
+              onClick={() => handleRemove(candidate.id)} 
+              disabled={removingId === candidate.id}
+              className="text-red-500"
+            >
+              Remove
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 };
-

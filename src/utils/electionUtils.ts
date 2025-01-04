@@ -1,28 +1,13 @@
 import { readContract } from '@wagmi/core';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 import { config } from "@/config/web3";
-import { writeContractWithConfirmation } from './contractUtils';
+import type { ElectionResult, ElectionHistory } from "@/types/election";
 
 export interface ElectionStatus {
   isActive: boolean;
   startTime: bigint;
   endTime: bigint;
   totalVotes: bigint;
-}
-
-export interface ElectionResult {
-  candidateId: bigint;
-  candidateName: string;
-  party: string;
-  voteCount: bigint;
-}
-
-export interface ElectionHistory {
-  id: bigint;
-  startTime: bigint;
-  endTime: bigint;
-  totalVotes: bigint;
-  results: ElectionResult[];
 }
 
 export const getElectionStatus = async (): Promise<ElectionStatus> => {
@@ -81,20 +66,6 @@ export const getElectionHistory = async (electionId: number): Promise<ElectionHi
   }
 };
 
-export const getTotalElections = async (): Promise<number> => {
-  try {
-    const total = await readContract(config, {
-      address: CONTRACT_ADDRESS as `0x${string}`,
-      abi: CONTRACT_ABI,
-      functionName: 'getTotalElections',
-    });
-    return Number(total);
-  } catch (error) {
-    console.error("Failed to fetch total elections:", error);
-    throw error;
-  }
-};
-
 export const hasVoted = async (address: string): Promise<boolean> => {
   try {
     return await readContract(config, {
@@ -102,7 +73,7 @@ export const hasVoted = async (address: string): Promise<boolean> => {
       abi: CONTRACT_ABI,
       functionName: 'hasVoted',
       args: [address as `0x${string}`],
-    });
+    }) as boolean;
   } catch (error) {
     console.error("Failed to check voting status:", error);
     throw error;

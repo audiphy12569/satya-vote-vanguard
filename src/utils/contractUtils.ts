@@ -15,18 +15,18 @@ export const writeContractWithConfirmation = async (
   functionName: ContractFunction,
   args: readonly unknown[],
   address?: `0x${string}`
-): Promise<{ hash: `0x${string}`; }> => {
+) => {
   try {
     const result = await writeContract(config, {
       address: CONTRACT_ADDRESS as `0x${string}`,
       abi: CONTRACT_ABI,
       functionName,
-      args: args as any[],
+      args,
       chain: sepolia,
       account: address,
     });
 
-    return { hash: result };
+    return result;
   } catch (error) {
     console.error(`Error in ${functionName}:`, error);
     throw error;

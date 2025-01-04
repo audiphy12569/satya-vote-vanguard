@@ -66,7 +66,9 @@ export const useElectionData = (address: `0x${string}` | undefined) => {
       const elections = [];
       for (let i = 1; i <= Number(totalElections); i++) {
         const election = await getElectionHistory(i);
-        elections.push(election);
+        if (election.id !== 0n) {
+          elections.push(election);
+        }
       }
       setPastElections(elections);
     } catch (error) {
