@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { sepolia } from "wagmi/chains";
 import { useChainId } from "wagmi";
 import { getAdminAddress, checkVoterStatus } from "@/utils/contractUtils";
-import { Users, UserPlus, Vote, Globe2 } from "lucide-react";
+import { Users, UserPlus, Vote } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 import {
   DropdownMenu,
@@ -185,8 +185,8 @@ export const Navbar = () => {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <Globe2 className="h-4 w-4" />
+                <Button variant="outline">
+                  {t('common.language')}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
