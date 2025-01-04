@@ -3,37 +3,5 @@ export const ALCHEMY_API_KEY = import.meta.env.VITE_ALCHEMY_API_KEY || "";
 export const PINATA_API_KEY = import.meta.env.VITE_PINATA_API_KEY || "";
 export const PINATA_SECRET_KEY = import.meta.env.VITE_PINATA_SECRET_KEY || "";
 
-export const CONTRACT_ABI = [
-  {
-    "inputs": [],
-    "name": "admin",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "approvedVoters",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  }
-] as const;
+// Import ABI from the new location
+export const CONTRACT_ABI = (await import('../contracts/abi.json')).default as const;
