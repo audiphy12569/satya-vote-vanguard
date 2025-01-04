@@ -1,9 +1,10 @@
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
+import { checkVoterStatus } from "@/utils/contractUtils";
+import { CheckCircle2, XCircle } from "lucide-react";
 
 export const VoterDashboard = () => {
   const { address } = useAccount();
@@ -13,28 +14,32 @@ export const VoterDashboard = () => {
   const [isVerifiedVoter, setIsVerifiedVoter] = useState(false);
   const [isElectionActive, setIsElectionActive] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    checkVoterStatus();
-    checkElectionStatus();
-    fetchCandidates();
+    if (address) {
+      checkVoterEligibility();
+      checkElectionStatus();
+      fetchCandidates();
+    }
   }, [address]);
 
-  const checkVoterStatus = async () => {
+  const checkVoterEligibility = async () => {
     try {
-      // Contract interaction will be implemented here to check if address is in voter list
-      // For now using mock data
-      const isVerified = false; // This will come from smart contract
+      setIsLoading(true);
+      const isVerified = await checkVoterStatus(address as string);
       setIsVerifiedVoter(isVerified);
     } catch (error) {
       console.error("Failed to check voter status:", error);
+      setIsVerifiedVoter(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const checkElectionStatus = async () => {
     try {
       // Contract interaction will be implemented here
-      // For now using mock data
       const electionActive = false; // This will come from smart contract
       setIsElectionActive(electionActive);
     } catch (error) {
@@ -45,7 +50,6 @@ export const VoterDashboard = () => {
   const fetchCandidates = async () => {
     try {
       // Contract interaction will be implemented here
-      // For now using mock data
       const candidatesList = []; // This will come from smart contract
       setCandidates(candidatesList);
     } catch (error) {
@@ -71,74 +75,91 @@ export const VoterDashboard = () => {
     }
   };
 
-  if (!isVerifiedVoter) {
-    return (
-      <div className="container mx-auto p-4">
-        <Alert variant="destructive" className="mb-4">
-          <AlertDescription>
-            You are not verified to vote. Please contact the admin to verify your address.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  if (!isElectionActive) {
-    return (
-      <div className="container mx-auto p-4">
-        <Alert className="mb-4 bg-yellow-50 border-yellow-200">
-          <AlertDescription>
-            Election has not started yet. Please wait for the admin to start the election.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  if (hasVoted) {
-    return (
-      <div className="container mx-auto p-4">
-        <Alert className="mb-4 bg-green-50 border-green-200">
-          <AlertDescription>
-            Thank you for voting! Your vote has been recorded.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto p-4 space-y-6">
       <h1 className="text-3xl font-bold text-purple-800 dark:text-purple-400">Voter Dashboard</h1>
       
-      <Alert className="mb-4 bg-green-50 border-green-200">
-        <AlertDescription>
-          Congratulations! You are eligible for voting.
-        </AlertDescription>
-      </Alert>
-      
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {candidates.map((candidate: any) => (
-          <Card key={candidate.id} className={`cursor-pointer transition-all ${
-            selectedCandidate === candidate.id ? 'ring-2 ring-purple-500' : ''
-          }`} onClick={() => setSelectedCandidate(candidate.id)}>
-            <CardHeader>
-              <CardTitle>{candidate.name}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 dark:text-gray-300">{candidate.party}</p>
-              <p className="text-sm mt-2">{candidate.tagline}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            Eligibility Status
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-2">
+            {isLoading ? (
+              <div className="animate-pulse flex space-x-4">
+                <div className="h-6 w-24 bg-gray-200 rounded"></div>
+              </div>
+            ) : isVerifiedVoter ? (
+              <>
+                <CheckCircle2 className="h-6 w-6 text-green-500" />
+                <span className="text-green-600 font-medium">You are eligible to vote</span>
+              </>
+            ) : (
+              <>
+                <XCircle className="h-6 w-6 text-red-500" />
+                <span className="text-red-600 font-medium">You are not eligible to vote</span>
+              </>
+            )}
+          </div>
+          
+          {!isVerifiedVoter && !isLoading && (
+            <p className="mt-2 text-sm text-gray-600">
+              Please contact the admin to get verified for voting.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
-      {selectedCandidate && (
-        <div className="flex justify-center mt-6">
-          <Button onClick={handleVote} className="px-8">
-            Cast Vote
-          </Button>
-        </div>
+      {isVerifiedVoter && (
+        <>
+          {!isElectionActive && (
+            <Alert className="mb-4 bg-yellow-50 border-yellow-200">
+              <AlertDescription>
+                Election has not started yet. Please wait for the admin to start the election.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {hasVoted && (
+            <Alert className="mb-4 bg-green-50 border-green-200">
+              <AlertDescription>
+                Thank you for voting! Your vote has been recorded.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {isElectionActive && !hasVoted && (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {candidates.map((candidate: any) => (
+                <Card 
+                  key={candidate.id} 
+                  className={`cursor-pointer transition-all ${
+                    selectedCandidate === candidate.id ? 'ring-2 ring-purple-500' : ''
+                  }`} 
+                  onClick={() => setSelectedCandidate(candidate.id)}
+                >
+                  <CardHeader>
+                    <CardTitle>{candidate.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600 dark:text-gray-300">{candidate.party}</p>
+                    <p className="text-sm mt-2">{candidate.tagline}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {isElectionActive && !hasVoted && selectedCandidate && (
+            <div className="flex justify-center mt-6">
+              <Button onClick={handleVote} className="px-8">
+                Cast Vote
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
