@@ -1,10 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { useAccount, useConnect, useDisconnect, useNetwork, useSwitchNetwork } from "wagmi";
+import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { useNavigate } from "react-router-dom";
 import { walletConnect } from "wagmi/connectors";
 import { useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { sepolia } from "wagmi/chains";
+import { useChainId, useConfig } from "wagmi";
 
 const ADMIN_ADDRESS = "0x123..."; // Replace with your actual admin address
 
@@ -12,20 +13,20 @@ export const Navbar = () => {
   const { address, isConnected } = useAccount();
   const { connect } = useConnect();
   const { disconnect } = useDisconnect();
-  const { chain } = useNetwork();
-  const { switchNetwork } = useSwitchNetwork();
+  const chainId = useChainId();
+  const config = useConfig();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleConnect = async () => {
     try {
-      if (chain && chain.id !== sepolia.id) {
+      if (chainId !== sepolia.id) {
         toast({
           variant: "destructive",
           title: "Wrong Network",
           description: "Please switch to Sepolia network to continue.",
         });
-        switchNetwork?.(sepolia.id);
+        await config.chains[0].connector?.switchChain?.(sepolia.id);
         return;
       }
 
@@ -46,13 +47,13 @@ export const Navbar = () => {
 
   useEffect(() => {
     if (isConnected && address) {
-      if (chain && chain.id !== sepolia.id) {
+      if (chainId !== sepolia.id) {
         toast({
           variant: "destructive",
           title: "Wrong Network",
           description: "Please switch to Sepolia network to continue.",
         });
-        switchNetwork?.(sepolia.id);
+        config.chains[0].connector?.switchChain?.(sepolia.id);
         return;
       }
 
@@ -63,7 +64,7 @@ export const Navbar = () => {
         navigate("/voter");
       }
     }
-  }, [isConnected, address, chain, navigate, switchNetwork]);
+  }, [isConnected, address, chainId, navigate, config.chains]);
 
   return (
     <nav className="bg-white dark:bg-gray-800 shadow-lg">
@@ -78,7 +79,7 @@ export const Navbar = () => {
             </span>
           </div>
           <div className="flex items-center space-x-4">
-            {chain && chain.id !== sepolia.id && (
+            {chainId !== sepolia.id && (
               <span className="text-sm text-red-500">
                 Wrong Network
               </span>
