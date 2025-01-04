@@ -133,7 +133,7 @@ export const CandidateList = () => {
                     <img 
                       src={formatIPFSUrl(candidate.logoIPFS)} 
                       alt={`${candidate.name}'s logo`}
-                      className="w-16 h-16 object-cover rounded-lg"
+                      className="w-16 h-16 object-contain rounded-lg"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.src = '/placeholder.svg';

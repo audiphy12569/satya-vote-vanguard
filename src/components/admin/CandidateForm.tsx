@@ -20,10 +20,6 @@ const formSchema = z.object({
   tagline: z.string().optional(),
   logo: z.instanceof(File, { message: "Please select a valid logo file" })
     .refine(
-      (file) => file.size <= 2 * 1024 * 1024,
-      "File size must be less than 2MB"
-    )
-    .refine(
       (file) => file.type.startsWith('image/'),
       "Please upload a valid image file"
     ),
