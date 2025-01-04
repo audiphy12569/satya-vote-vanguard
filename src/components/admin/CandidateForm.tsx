@@ -24,8 +24,8 @@ const formSchema = z.object({
       "File size must be less than 2MB"
     )
     .refine(
-      (file) => ['image/jpeg', 'image/png', 'image/gif'].includes(file.type),
-      "Only .jpg, .png, and .gif formats are supported"
+      (file) => file.type.startsWith('image/'),
+      "Please upload a valid image file"
     ),
 });
 
