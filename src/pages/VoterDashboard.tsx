@@ -3,39 +3,75 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, useNetwork } from "wagmi";
 import { checkVoterStatus } from "@/utils/contractUtils";
-import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, RefreshCw } from "lucide-react";
+import { sepolia } from "wagmi/chains";
 
 export const VoterDashboard = () => {
-  const { address } = useAccount();
+  const { address, isConnected } = useAccount();
+  const { chain } = useNetwork();
   const { toast } = useToast();
-  const [isVerifiedVoter, setIsVerifiedVoter] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    if (address) {
-      checkVoterEligibility();
-    }
-  }, [address]);
+  const [isVerifiedVoter, setIsVerifiedVoter] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   const checkVoterEligibility = async () => {
+    if (!address || !isConnected) {
+      setError("Please connect your wallet first");
+      setIsLoading(false);
+      return;
+    }
+
+    if (chain?.id !== sepolia.id) {
+      setError("Please switch to Sepolia network");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
-      const isVerified = await checkVoterStatus(address as string);
+      setError(null);
+      const isVerified = await checkVoterStatus(address);
       setIsVerifiedVoter(isVerified);
-    } catch (error) {
-      console.error("Failed to check voter status:", error);
+      
+      if (!isVerified) {
+        toast({
+          variant: "destructive",
+          title: "Not Verified",
+          description: "You are not verified to vote. Please contact the admin.",
+        });
+      }
+    } catch (err) {
+      console.error("Failed to check voter status:", err);
+      setError("Failed to check voter eligibility. Please try again later.");
       setIsVerifiedVoter(false);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to check voter eligibility. Please try again later.",
-      });
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (isConnected && address) {
+      checkVoterEligibility();
+    }
+  }, [isConnected, address, chain?.id]);
+
+  if (!isConnected) {
+    return (
+      <div className="container mx-auto p-4">
+        <Card className="w-full max-w-2xl mx-auto">
+          <CardContent className="p-6">
+            <Alert className="bg-yellow-50 border-yellow-200">
+              <AlertDescription>
+                Please connect your wallet to check your voting eligibility.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-4 space-y-6">
@@ -55,6 +91,10 @@ export const VoterDashboard = () => {
               <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
               <span className="ml-2 text-gray-600">Checking eligibility...</span>
             </div>
+          ) : error ? (
+            <Alert variant="destructive" className="bg-red-50 border-red-200">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           ) : (
             <div className="space-y-4">
               <div className={`p-6 rounded-lg border ${
@@ -87,25 +127,16 @@ export const VoterDashboard = () => {
                 )}
               </div>
 
-              {isVerifiedVoter && (
-                <div className="space-y-4">
-                  <Alert className="bg-purple-50 border-purple-200">
-                    <AlertDescription>
-                      Welcome! You can participate in active elections.
-                    </AlertDescription>
-                  </Alert>
-                  
-                  <div className="text-center">
-                    <Button 
-                      onClick={checkVoterEligibility}
-                      variant="outline"
-                      className="mt-4"
-                    >
-                      Refresh Status
-                    </Button>
-                  </div>
-                </div>
-              )}
+              <div className="flex justify-center">
+                <Button 
+                  onClick={checkVoterEligibility}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Refresh Status
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>

@@ -4,6 +4,10 @@ import { config } from "@/config/web3";
 
 export const getAdminAddress = async () => {
   try {
+    if (!CONTRACT_ADDRESS || CONTRACT_ADDRESS === "0x123...") {
+      throw new Error("Invalid contract address in environment variables");
+    }
+    
     const data = await readContract(config, {
       address: CONTRACT_ADDRESS as `0x${string}`,
       abi: CONTRACT_ABI,
@@ -18,6 +22,10 @@ export const getAdminAddress = async () => {
 
 export const checkVoterStatus = async (address: string) => {
   try {
+    if (!CONTRACT_ADDRESS || CONTRACT_ADDRESS === "0x123...") {
+      throw new Error("Invalid contract address in environment variables");
+    }
+
     const data = await readContract(config, {
       address: CONTRACT_ADDRESS as `0x${string}`,
       abi: CONTRACT_ABI,
