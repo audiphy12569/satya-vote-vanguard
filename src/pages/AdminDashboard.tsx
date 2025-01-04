@@ -4,44 +4,49 @@ import { ElectionControl } from "@/components/admin/ElectionControl";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from "react";
-import { readContract } from '@wagmi/core';
-import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
-import { config } from "@/config/web3";
 import { ElectionResults } from "@/components/ElectionResults";
-import { getElectionHistory } from "@/utils/electionUtils";
+import { getElectionStatus, getElectionHistory, getTotalElections } from "@/utils/electionUtils";
+import type { ElectionHistory } from "@/utils/electionUtils";
 
 export const AdminDashboard = () => {
   const [isElectionActive, setIsElectionActive] = useState(false);
-  const [pastElections, setPastElections] = useState<any[]>([]);
+  const [pastElections, setPastElections] = useState<ElectionHistory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchElectionData = async () => {
       try {
-        const data = await readContract(config, {
-          address: CONTRACT_ADDRESS as `0x${string}`,
-          abi: CONTRACT_ABI,
-          functionName: 'getElectionStatus',
-        });
-        setIsElectionActive(data[0]);
+        setIsLoading(true);
+        const status = await getElectionStatus();
+        setIsElectionActive(status.isActive);
 
-        const totalElections = await readContract(config, {
-          address: CONTRACT_ADDRESS as `0x${string}`,
-          abi: CONTRACT_ABI,
-          functionName: 'getTotalElections',
-        });
-
+        const totalElections = await getTotalElections();
         const elections = [];
-        for (let i = 1; i <= Number(totalElections); i++) {
-          const election = await getElectionHistory(i);
-          elections.push(election);
+        
+        // Fetch all past elections
+        for (let i = 1; i <= totalElections; i++) {
+          try {
+            const election = await getElectionHistory(i);
+            elections.push(election);
+          } catch (error) {
+            console.error(`Failed to fetch election #${i}:`, error);
+          }
         }
-        setPastElections(elections);
+        
+        // Sort elections by ID in descending order (newest first)
+        setPastElections(elections.sort((a, b) => Number(b.id - a.id)));
       } catch (error) {
-        console.error("Failed to fetch data:", error);
+        console.error("Failed to fetch election data:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchData();
+    fetchElectionData();
+    
+    // Refresh data every 30 seconds
+    const interval = setInterval(fetchElectionData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -50,7 +55,7 @@ export const AdminDashboard = () => {
       
       <Alert className={isElectionActive ? "bg-green-50 border-green-200" : "bg-yellow-50 border-yellow-200"}>
         <AlertDescription>
-          {isElectionActive ? "Election is currently active" : "Election is not active"}
+          {isElectionActive ? "Election is currently active" : "No active election"}
         </AlertDescription>
       </Alert>
       
@@ -65,7 +70,13 @@ export const AdminDashboard = () => {
           <CardTitle>Election History</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {pastElections.length === 0 ? (
+          {isLoading ? (
+            <Alert>
+              <AlertDescription>
+                Loading election history...
+              </AlertDescription>
+            </Alert>
+          ) : pastElections.length === 0 ? (
             <Alert>
               <AlertDescription>
                 No past elections found
@@ -73,7 +84,11 @@ export const AdminDashboard = () => {
             </Alert>
           ) : (
             pastElections.map((election) => (
-              <ElectionResults key={String(election.id)} election={election} />
+              <ElectionResults 
+                key={String(election.id)} 
+                election={election} 
+                isLive={isElectionActive && Number(election.id) === pastElections.length}
+              />
             ))
           )}
         </CardContent>

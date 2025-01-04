@@ -20,6 +20,10 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
     return { color: "text-gray-600", label: `${index + 1}th` };
   };
 
+  const formatDate = (timestamp: bigint) => {
+    return new Date(Number(timestamp) * 1000).toLocaleString();
+  };
+
   return (
     <Card className="mb-4">
       <CardHeader>
@@ -30,7 +34,9 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
             <>
               Election #{Number(election.id)} Results
               <span className="text-sm text-gray-500 block">
-                {new Date(Number(election.startTime) * 1000).toLocaleString()}
+                Started: {formatDate(election.startTime)}
+                <br />
+                Ended: {formatDate(election.endTime)}
               </span>
             </>
           )}
@@ -71,6 +77,9 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
                 </div>
               );
             })}
+            <div className="mt-4 text-sm text-gray-500 text-right">
+              Total Votes: {election.totalVotes.toString()}
+            </div>
           </div>
         )}
       </CardContent>
