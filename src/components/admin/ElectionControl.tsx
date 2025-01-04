@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { getActiveCandidateCount, getElectionStatus } from "@/utils/electionUtils";
 import { writeContractWithConfirmation } from "@/utils/contractUtils";
-import { CONTRACT_ADDRESS } from "@/config/contract";
+import { useAccount } from 'wagmi';
 
 export const ElectionControl = () => {
   const { toast } = useToast();
   const [isStarting, setIsStarting] = useState(false);
-  const [electionActive, setElectionActive] = useState(false);
-  const [endTime, setEndTime] = useState<number>(0);
+  const [duration, setDuration] = useState<number>(60);
+  const { address } = useAccount();
 
-  const handleStartElection = async (durationInMinutes: number) => {
+  const handleStartElection = async () => {
     try {
       setIsStarting(true);
       const activeCandidates = await getActiveCandidateCount();
@@ -25,10 +26,19 @@ export const ElectionControl = () => {
         return;
       }
 
+      if (duration < 1) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Duration must be at least 1 minute",
+        });
+        return;
+      }
+
       await writeContractWithConfirmation(
         'startElection',
-        [BigInt(durationInMinutes)],
-        CONTRACT_ADDRESS
+        [BigInt(duration)],
+        address
       );
       
       toast({
@@ -37,9 +47,7 @@ export const ElectionControl = () => {
       });
       
       // Refresh election status
-      const status = await getElectionStatus();
-      setElectionActive(status.isActive);
-      setEndTime(Number(status.endTime));
+      await getElectionStatus();
     } catch (error) {
       console.error("Failed to start election:", error);
       toast({
@@ -55,9 +63,19 @@ export const ElectionControl = () => {
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-bold">Election Control</h2>
-      <Button onClick={() => handleStartElection(60)} disabled={isStarting}>
-        {isStarting ? "Starting..." : "Start Election"}
-      </Button>
+      <div className="flex items-center gap-4">
+        <Input
+          type="number"
+          min="1"
+          value={duration}
+          onChange={(e) => setDuration(Number(e.target.value))}
+          placeholder="Duration in minutes"
+          className="w-48"
+        />
+        <Button onClick={handleStartElection} disabled={isStarting}>
+          {isStarting ? "Starting..." : "Start Election"}
+        </Button>
+      </div>
     </div>
   );
 };

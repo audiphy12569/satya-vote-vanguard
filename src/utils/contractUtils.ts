@@ -30,16 +30,25 @@ export const checkVoterStatus = async (address: string) => {
   }
 };
 
+type ContractFunction = 
+  | "addCandidate" 
+  | "approveVoter" 
+  | "removeAllVoters" 
+  | "removeCandidate" 
+  | "removeVoter" 
+  | "startElection" 
+  | "vote";
+
 export const writeContractWithConfirmation = async (
-  functionName: "addCandidate" | "approveVoter" | "removeAllVoters" | "removeCandidate" | "removeVoter" | "startElection" | "vote",
-  args: Parameters<typeof CONTRACT_ABI[number]>[number],
+  functionName: ContractFunction,
+  args: any[],
   account: `0x${string}` | undefined
 ) => {
   const { hash } = await writeContract(config, {
     address: CONTRACT_ADDRESS as `0x${string}`,
     abi: CONTRACT_ABI,
-    functionName,
-    args,
+    functionName: functionName,
+    args: args,
     chain: sepolia,
     account,
   });
