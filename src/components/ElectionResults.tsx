@@ -1,7 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ElectionHistory } from "@/types/election";
-import { useVoteCount } from "@/hooks/useVoteCount";
 import { useEffect, useState } from "react";
 import { getElectionHistory, getCurrentElectionId, getElectionStatus } from "@/utils/electionUtils";
 import { useToast } from "@/hooks/use-toast";
@@ -25,22 +24,25 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
         const status = await getElectionStatus();
         const currentId = await getCurrentElectionId();
         
-        // Check if the election has ended based on time
-        if (status.endTime && Date.now() / 1000 > Number(status.endTime)) {
-          const updatedResults = await getElectionHistory(Number(currentId));
-          
-          if (updatedResults.id === 0n) {
-            console.error("Invalid election ID received");
-            return;
-          }
-          
-          setCurrentResults(updatedResults);
-          
-          if (updatedResults.totalVotes !== election.totalVotes) {
-            toast({
-              title: "Election Results Updated",
-              description: `Final results for Election #${Number(updatedResults.id)} are now available.`,
-            });
+        // Only fetch results if we're looking at the current election
+        if (currentId === Number(election.id)) {
+          // Check if the election has ended based on time
+          if (status.endTime && Date.now() / 1000 > Number(status.endTime)) {
+            const updatedResults = await getElectionHistory(Number(currentId));
+            
+            if (updatedResults.id === 0n) {
+              console.error("Invalid election ID received");
+              return;
+            }
+            
+            setCurrentResults(updatedResults);
+            
+            if (updatedResults.totalVotes !== election.totalVotes) {
+              toast({
+                title: "Election Results Updated",
+                description: `Final results for Election #${Number(updatedResults.id)} are now available.`,
+              });
+            }
           }
         }
       } catch (error) {

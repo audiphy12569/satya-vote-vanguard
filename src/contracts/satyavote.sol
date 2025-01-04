@@ -182,26 +182,29 @@ contract VotingSystem {
         Election storage election = elections[_electionId];
         ElectionHistory storage history = electionHistories[_electionId];
         
-        history.id = uint96(_electionId);
-        history.startTime = election.startTime;
-        history.endTime = election.endTime;
-        history.totalVotes = election.totalVotes;
-        
-        // Store results for each active candidate
-        for (uint256 i = 1; i <= candidateCount;) {
-            if (candidates[i].isActive) {
-                history.results.push(ElectionResult({
-                    candidateId: uint96(i),
-                    candidateName: candidates[i].name,
-                    party: candidates[i].party,
-                    voteCount: candidates[i].voteCount
-                }));
+        // Only update history if it hasn't been recorded yet
+        if (history.id == 0) {
+            history.id = uint96(_electionId);
+            history.startTime = election.startTime;
+            history.endTime = election.endTime;
+            history.totalVotes = election.totalVotes;
+            
+            // Store results for each active candidate
+            for (uint256 i = 1; i <= candidateCount;) {
+                if (candidates[i].isActive) {
+                    history.results.push(ElectionResult({
+                        candidateId: uint96(i),
+                        candidateName: candidates[i].name,
+                        party: candidates[i].party,
+                        voteCount: candidates[i].voteCount
+                    }));
+                }
+                unchecked { ++i; }
             }
-            unchecked { ++i; }
+            
+            election.isActive = false;
+            emit ElectionEnded(_electionId, election.endTime, election.totalVotes);
         }
-        
-        election.isActive = false;
-        emit ElectionEnded(_electionId, election.endTime, election.totalVotes);
     }
 
     function vote(uint256 _candidateId) external onlyApprovedVoter noReentrant {
@@ -289,6 +292,41 @@ contract VotingSystem {
         uint256 totalVotes,
         ElectionResult[] memory results
     ) {
+        // If requesting current election and it has ended, end it first
+        if (_electionId == currentElectionId) {
+            Election storage currentElection = elections[currentElectionId];
+            if (currentElection.isActive && block.timestamp > currentElection.endTime) {
+                // We can't modify state in a view function, but we can return the would-be results
+                ElectionResult[] memory currentResults = new ElectionResult[](candidateCount);
+                uint256 resultCount = 0;
+                
+                for (uint256 i = 1; i <= candidateCount; i++) {
+                    if (candidates[i].isActive) {
+                        currentResults[resultCount] = ElectionResult({
+                            candidateId: uint96(i),
+                            candidateName: candidates[i].name,
+                            party: candidates[i].party,
+                            voteCount: candidates[i].voteCount
+                        });
+                        resultCount++;
+                    }
+                }
+                
+                // Resize array to actual result count
+                assembly {
+                    mstore(currentResults, resultCount)
+                }
+                
+                return (
+                    currentElectionId,
+                    currentElection.startTime,
+                    currentElection.endTime,
+                    currentElection.totalVotes,
+                    currentResults
+                );
+            }
+        }
+        
         ElectionHistory storage history = electionHistories[_electionId];
         return (
             history.id,
