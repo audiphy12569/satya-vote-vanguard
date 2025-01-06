@@ -23,7 +23,7 @@ export const CandidateList = () => {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
         functionName: 'getCandidateCount',
-      });
+      }) as bigint;
 
       const candidatesData = [];
       for (let i = 1; i <= Number(count); i++) {
@@ -32,10 +32,10 @@ export const CandidateList = () => {
           abi: CONTRACT_ABI,
           functionName: 'getCandidate',
           args: [BigInt(i)],
-        }) as [string, string, string, string, bigint, boolean]; // Explicitly type the tuple
+        }) as [string, string, string, string, bigint, boolean];
 
         // Only add the candidate if they are active
-        if (candidate[5]) { // candidate[5] is the isActive status
+        if (candidate[5]) {
           candidatesData.push({
             id: i,
             name: candidate[0],
