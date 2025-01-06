@@ -30,20 +30,20 @@ export const CandidateList = () => {
         const candidate = await readContract(config, {
           address: CONTRACT_ADDRESS as `0x${string}`,
           abi: CONTRACT_ABI,
-          functionName: 'getCandidate',
+          functionName: 'candidates',
           args: [BigInt(i)],
-        }) as [string, string, string, string, bigint, boolean];
+        });
 
         // Only add the candidate if they are active
-        if (candidate[5]) {
+        if (candidate.isActive) {
           candidatesData.push({
             id: i,
-            name: candidate[0],
-            party: candidate[1],
-            tagline: candidate[2],
-            logoIPFS: candidate[3],
-            voteCount: candidate[4],
-            isActive: candidate[5],
+            name: candidate.name,
+            party: candidate.party,
+            tagline: candidate.tagline,
+            logoIPFS: candidate.logoIPFS,
+            voteCount: candidate.voteCount,
+            isActive: candidate.isActive,
           });
         }
       }
@@ -107,7 +107,6 @@ export const CandidateList = () => {
 
   const formatIPFSUrl = (ipfsUrl: string) => {
     if (!ipfsUrl) return '';
-    // Convert IPFS URL to HTTP gateway URL
     return ipfsUrl.replace('ipfs://', 'https://ipfs.io/ipfs/');
   };
 
