@@ -32,7 +32,7 @@ export const CandidateList = () => {
           abi: CONTRACT_ABI,
           functionName: 'getCandidate',
           args: [BigInt(i)],
-        });
+        }) as [string, string, string, string, bigint, boolean]; // Explicitly type the tuple
 
         // Only add the candidate if they are active
         if (candidate[5]) { // candidate[5] is the isActive status
