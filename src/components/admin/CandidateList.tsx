@@ -32,18 +32,18 @@ export const CandidateList = () => {
           abi: CONTRACT_ABI,
           functionName: 'candidates',
           args: [BigInt(i)],
-        }) as [string, string, string, string, bigint, boolean];
+        }) as readonly [bigint, bigint, boolean, string, string, string, string];
 
-        // Only add the candidate if they are active
-        if (candidate[5]) {
+        // Only add the candidate if they are active (index 2 is isActive)
+        if (candidate[2]) {
           candidatesData.push({
             id: i,
-            name: candidate[0],
-            party: candidate[1],
-            tagline: candidate[2],
-            logoIPFS: candidate[3],
-            voteCount: candidate[4],
-            isActive: candidate[5],
+            name: candidate[3],
+            party: candidate[4],
+            tagline: candidate[5],
+            logoIPFS: candidate[6],
+            voteCount: candidate[1],
+            isActive: candidate[2],
           });
         }
       }
@@ -130,7 +130,7 @@ export const CandidateList = () => {
       </CardHeader>
       <CardContent>
         {candidates.length === 0 ? (
-          <p className="text-center text-gray-500">No candidates added yet</p>
+          <p className="text-center text-gray-500">No active candidates currently</p>
         ) : (
           <div className="space-y-4">
             {candidates.map(candidate => (
