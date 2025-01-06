@@ -33,15 +33,19 @@ export const CandidateList = () => {
           functionName: 'getCandidate',
           args: [BigInt(i)],
         });
-        candidatesData.push({
-          id: i,
-          name: candidate[0],
-          party: candidate[1],
-          tagline: candidate[2],
-          logoIPFS: candidate[3],
-          voteCount: candidate[4],
-          isActive: true,
-        });
+
+        // Only add the candidate if they are active
+        if (candidate[5]) { // candidate[5] is the isActive status
+          candidatesData.push({
+            id: i,
+            name: candidate[0],
+            party: candidate[1],
+            tagline: candidate[2],
+            logoIPFS: candidate[3],
+            voteCount: candidate[4],
+            isActive: candidate[5],
+          });
+        }
       }
       setCandidates(candidatesData);
     } catch (error) {
@@ -84,7 +88,11 @@ export const CandidateList = () => {
         description: "Candidate removed successfully",
       });
 
-      fetchCandidates();
+      // Immediately remove the candidate from the local state
+      setCandidates(prev => prev.filter(c => c.id !== id));
+      
+      // Fetch the updated list from the contract
+      await fetchCandidates();
     } catch (error) {
       console.error("Failed to remove candidate:", error);
       toast({
