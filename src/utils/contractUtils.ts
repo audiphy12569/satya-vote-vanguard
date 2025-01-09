@@ -10,8 +10,8 @@ interface ElectionStatus {
 }
 
 interface ElectionResult {
-  candidateId: number;
-  voteCount: number;
+  candidateId: bigint;
+  voteCount: bigint;
   candidateName: string;
   party: string;
 }
@@ -38,20 +38,22 @@ export const getAdminAddress = async (): Promise<string> => {
   }
 };
 
+type ContractFunction = "addCandidate" | "approveVoter" | "removeAllVoters" | "removeCandidate" | "startElection" | "vote";
+
 export const writeContractWithConfirmation = async (
-  functionName: string,
-  args: any[],
+  functionName: ContractFunction,
+  args: readonly unknown[],
   address?: string
 ) => {
   try {
-    const { hash } = await writeContract(config, {
+    const result = await writeContract(config, {
       address: CONTRACT_ADDRESS as `0x${string}`,
       abi: CONTRACT_ABI,
       functionName,
       args,
       account: address as `0x${string}`,
     });
-    return hash;
+    return result;
   } catch (error) {
     console.error(`Failed to execute ${functionName}:`, error);
     throw error;
@@ -114,14 +116,22 @@ export const getElectionHistory = async (electionId: number): Promise<ElectionHi
       abi: CONTRACT_ABI,
       functionName: 'getElectionHistory',
       args: [BigInt(electionId)],
-    }) as [bigint, bigint, bigint, bigint, ElectionResult[]];
+    });
+    
+    const [id, startTime, endTime, totalVotes, results] = data as readonly [
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      readonly ElectionResult[]
+    ];
     
     return {
-      id: data[0],
-      startTime: data[1],
-      endTime: data[2],
-      totalVotes: data[3],
-      results: data[4],
+      id,
+      startTime,
+      endTime,
+      totalVotes,
+      results: Array.from(results),
     };
   } catch (error) {
     console.error("Failed to fetch election history:", error);

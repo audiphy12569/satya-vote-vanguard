@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ElectionHistory } from "@/types/election";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { getElectionHistory, getCurrentElectionId, getElectionStatus } from "@/utils/electionUtils";
 import { useToast } from "@/hooks/use-toast";
 import { ElectionHeader } from "./election/ElectionHeader";
@@ -52,6 +52,8 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
     
     if (isLive) {
       fetchAndUpdateResults();
+      const timer = setInterval(fetchAndUpdateResults, 5000);
+      return () => clearInterval(timer);
     }
   }, [election, isLive, toast]);
 

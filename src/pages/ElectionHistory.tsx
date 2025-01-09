@@ -17,7 +17,7 @@ export const ElectionHistory = () => {
       });
 
       const electionResults = [];
-      for (let i = 1; i <= Number(totalElections); i++) {
+      for (let i = Number(totalElections); i >= 1; i--) {
         const election = await getElectionHistory(i);
         if (election.id !== 0n) {
           electionResults.push(election);
