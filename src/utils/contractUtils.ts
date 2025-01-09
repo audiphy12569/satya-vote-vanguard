@@ -24,24 +24,8 @@ interface ElectionHistory {
   results: ElectionResult[];
 }
 
-export const getAdminAddress = async (): Promise<string> => {
-  try {
-    const data = await readContract(config, {
-      address: CONTRACT_ADDRESS as `0x${string}`,
-      abi: CONTRACT_ABI,
-      functionName: 'admin',
-    });
-    return data as string;
-  } catch (error) {
-    console.error("Failed to fetch admin address:", error);
-    throw error;
-  }
-};
-
-type ContractFunction = "addCandidate" | "approveVoter" | "removeAllVoters" | "removeCandidate" | "startElection" | "vote";
-
 export const writeContractWithConfirmation = async (
-  functionName: ContractFunction,
+  functionName: "addCandidate" | "approveVoter" | "removeAllVoters" | "removeCandidate" | "startElection" | "endElection" | "vote",
   args: readonly unknown[],
   address?: string
 ) => {

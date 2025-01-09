@@ -1,166 +1,153 @@
-import { useEffect, useState } from "react";
-import { readContract } from '@wagmi/core';
-import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
-import { config } from "@/config/web3";
-import { ElectionTimer } from "@/components/ElectionTimer";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Loader2, Vote } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
+import { useAccount, useChainId } from "wagmi";
+import { checkVoterStatus } from "@/utils/contractUtils";
+import { sepolia } from "wagmi/chains";
+import { ElectionResults } from "@/components/ElectionResults";
+import { VoterEligibilityStatus } from "@/components/voter/VoterEligibilityStatus";
+import { CurrentElectionVoting } from "@/components/voter/CurrentElectionVoting";
+import { useElectionData } from "@/hooks/useElectionData";
 
-interface DashboardCandidate {
-  id: number;
-  name: string;
-  party: string;
-  tagline: string;
-  logoIPFS: string;
-  voteCount: bigint;
-  isActive: boolean;
-}
-
-const VoterDashboard = () => {
+export const VoterDashboard = () => {
+  const { address, isConnected } = useAccount();
+  const chainId = useChainId();
   const { toast } = useToast();
-  const [candidates, setCandidates] = useState<DashboardCandidate[]>([]);
-  const [isVoting, setIsVoting] = useState(false);
-  const [hasUserVoted, setHasUserVoted] = useState(false);
-  const [endTime, setEndTime] = useState<number>(0);
+  const [isVerifiedVoter, setIsVerifiedVoter] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchElectionData = async () => {
-      try {
-        // First, get the total number of candidates
-        const count = await readContract(config, {
-          address: CONTRACT_ADDRESS as `0x${string}`,
-          abi: CONTRACT_ABI,
-          functionName: 'getCandidateCount',
-        });
+  const {
+    electionActive,
+    endTime,
+    candidates,
+    hasUserVoted,
+    pastElections,
+    isVoting,
+    handleVote,
+    updateElectionStatus,
+  } = useElectionData(address);
 
-        // Fetch all candidates and store them temporarily
-        const candidatesData: DashboardCandidate[] = [];
-        for (let i = Number(count); i >= 1; i--) { // Changed loop to count down instead of up
-          const candidate = await readContract(config, {
-            address: CONTRACT_ADDRESS as `0x${string}`,
-            abi: CONTRACT_ABI,
-            functionName: 'candidates',
-            args: [BigInt(i)],
-          }) as readonly [bigint, bigint, boolean, string, string, string, string];
+  const checkVoterEligibility = async () => {
+    if (!address || !isConnected) {
+      setError("Please connect your wallet first");
+      setIsLoading(false);
+      return;
+    }
 
-          if (candidate[2]) { // if candidate is active
-            candidatesData.push({
-              id: i,
-              name: candidate[3],
-              party: candidate[4],
-              tagline: candidate[5],
-              logoIPFS: candidate[6],
-              voteCount: candidate[1],
-              isActive: candidate[2],
-            });
-          }
-        }
-        setCandidates(candidatesData);
-      } catch (error) {
-        console.error("Failed to fetch candidates:", error);
-      }
-    };
+    if (chainId !== sepolia.id) {
+      setError("Please switch to Sepolia network");
+      setIsLoading(false);
+      return;
+    }
 
-    fetchElectionData();
-  }, []);
-
-  const onVote = async (candidateId: number) => {
-    setIsVoting(true);
     try {
-      // Call the voting function here
-      // await voteForCandidate(candidateId);
-      toast({
-        title: "Vote Cast",
-        description: `You have voted for candidate ${candidateId}`,
-      });
-      setHasUserVoted(true);
-    } catch (error) {
-      console.error("Failed to cast vote:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to cast your vote.",
-      });
+      setIsLoading(true);
+      setError(null);
+      const isVerified = await checkVoterStatus(address);
+      setIsVerifiedVoter(isVerified);
+      
+      if (!isVerified) {
+        toast({
+          variant: "destructive",
+          title: "Not Verified",
+          description: "You are not verified to vote. Please contact the admin.",
+        });
+      }
+
+      await updateElectionStatus(address);
+    } catch (err) {
+      console.error("Failed to check voter status:", err);
+      setError("Failed to check voter eligibility. Please try again later.");
+      setIsVerifiedVoter(false);
     } finally {
-      setIsVoting(false);
+      setIsLoading(false);
     }
   };
 
-  return (
-    <div className="space-y-4">
-      <ElectionTimer endTime={endTime} />
+  useEffect(() => {
+    if (isConnected && address) {
+      checkVoterEligibility();
+    }
+  }, [isConnected, address, chainId]);
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Current Election</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {hasUserVoted ? (
-            <Alert className="bg-green-50 border-green-200">
+  if (!isConnected) {
+    return (
+      <div className="container mx-auto p-4">
+        <Card className="w-full max-w-2xl mx-auto">
+          <CardContent className="p-6">
+            <Alert className="bg-yellow-50 border-yellow-200">
               <AlertDescription>
-                You have already voted in this election
+                Please connect your wallet to check your voting eligibility.
               </AlertDescription>
             </Alert>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Sort pastElections in reverse order (latest first)
+  const sortedPastElections = [...pastElections].sort((a, b) => 
+    Number(b.id) - Number(a.id)
+  );
+
+  return (
+    <div className="container mx-auto p-4 space-y-6">
+      <h1 className="text-3xl font-bold text-center text-purple-800 dark:text-purple-400 mb-8">
+        Voter Dashboard
+      </h1>
+
+      <VoterEligibilityStatus
+        isLoading={isLoading}
+        error={error}
+        isVerifiedVoter={isVerifiedVoter}
+        onRefresh={checkVoterEligibility}
+      />
+
+      {isVerifiedVoter && electionActive && (
+        <CurrentElectionVoting
+          endTime={endTime}
+          hasUserVoted={hasUserVoted}
+          candidates={candidates}
+          isVoting={isVoting}
+          onVote={handleVote}
+        />
+      )}
+
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle>Election Results</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {electionActive ? (
+            <ElectionResults
+              election={{
+                id: BigInt(0),
+                startTime: BigInt(0),
+                endTime: BigInt(endTime),
+                totalVotes: BigInt(0),
+                results: candidates.map((c) => ({
+                  candidateId: BigInt(c.id),
+                  candidateName: c.name,
+                  party: c.party,
+                  voteCount: c.voteCount,
+                })),
+              }}
+              isLive={true}
+            />
+          ) : sortedPastElections.length === 0 ? (
+            <Alert>
+              <AlertDescription>No past elections found</AlertDescription>
+            </Alert>
           ) : (
-            <div className="space-y-4">
-              {candidates.length === 0 ? (
-                <Alert>
-                  <AlertDescription>
-                    No active candidates currently
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                candidates.map((candidate) => (
-                  <div
-                    key={candidate.id}
-                    className="p-4 border rounded-lg flex justify-between items-center"
-                  >
-                    <div className="flex items-center space-x-4">
-                      {candidate.logoIPFS && (
-                        <img
-                          src={candidate.logoIPFS.replace(
-                            "ipfs://",
-                            "https://ipfs.io/ipfs/"
-                          )}
-                          alt={`${candidate.name}'s logo`}
-                          className="w-12 h-12 rounded-full object-cover bg-gray-100"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = "/placeholder.svg";
-                          }}
-                        />
-                      )}
-                      <div>
-                        <p className="font-semibold">{candidate.name}</p>
-                        <p className="text-sm text-gray-600">{candidate.party}</p>
-                        <p className="text-xs text-gray-500">{candidate.tagline}</p>
-                      </div>
-                    </div>
-                    <Button
-                      onClick={() => onVote(candidate.id)}
-                      disabled={isVoting || hasUserVoted}
-                      className="ml-4"
-                    >
-                      {isVoting ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <>
-                          <Vote className="h-4 w-4 mr-2" />
-                          Vote
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                ))
-              )}
-            </div>
+            sortedPastElections.map((election) => (
+              <ElectionResults key={String(election.id)} election={election} />
+            ))
           )}
         </CardContent>
       </Card>
     </div>
   );
 };
-
-export default VoterDashboard;
