@@ -2,11 +2,9 @@ import { Medal } from "lucide-react";
 import { ElectionResult } from "@/types/election";
 import { useAccount } from "wagmi";
 import { useEffect, useState } from "react";
-import { readContract } from "@wagmi/core";
-import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 import { createPublicClient, http } from 'viem';
 import { sepolia } from 'viem/chains';
-import { useVoteCount } from "@/hooks/useVoteCount";
+import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 
 interface ElectionResultCardProps {
   result: ElectionResult;
@@ -25,7 +23,6 @@ export const ElectionResultCard = ({
 }: ElectionResultCardProps) => {
   const { address } = useAccount();
   const [voterChoice, setVoterChoice] = useState<string>("");
-  const liveVoteCount = useVoteCount(Number(result.candidateId), isLive && !isElectionOver());
 
   const getPosition = (index: number) => {
     if (index === 0) return { color: "text-yellow-500", label: "1st" };
@@ -71,7 +68,6 @@ export const ElectionResultCard = ({
   }, [address, electionId, result, isLive]);
 
   const position = getPosition(index);
-  const displayVoteCount = isLive && !isElectionOver() ? liveVoteCount : result.voteCount;
 
   return (
     <div 
@@ -92,10 +88,7 @@ export const ElectionResultCard = ({
           </span>
         )}
         <p className="font-bold">
-          {displayVoteCount.toString()} votes
-          {isLive && !isElectionOver() && (
-            <span className="text-xs text-purple-500 ml-1">(Live)</span>
-          )}
+          {result.voteCount.toString()} votes
         </p>
       </div>
     </div>

@@ -1,13 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ElectionHistory } from "@/types/election";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { getElectionHistory, getCurrentElectionId, getElectionStatus } from "@/utils/electionUtils";
 import { useToast } from "@/hooks/use-toast";
 import { ElectionHeader } from "./election/ElectionHeader";
 import { ElectionResultCard } from "./election/ElectionResultCard";
-import { ElectionTimer } from "./ElectionTimer";
-import { LiveVoteCount } from "./election/LiveVoteCount";
 import { useAccount } from "wagmi";
 
 interface ElectionResultsProps {
@@ -54,8 +52,6 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
     
     if (isLive) {
       fetchAndUpdateResults();
-      const timer = setInterval(fetchAndUpdateResults, 5000);
-      return () => clearInterval(timer);
     }
   }, [election, isLive, toast]);
 
@@ -71,13 +67,6 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
     return null;
   }
 
-  const activeCandidates = sortedResults.map(result => ({
-    id: Number(result.candidateId),
-    name: result.candidateName,
-    party: result.party,
-    logoIPFS: result.logoIPFS
-  }));
-
   return (
     <Card className="mb-4">
       <ElectionHeader 
@@ -87,15 +76,6 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
         endTime={currentResults.endTime}
         isElectionOver={isElectionOver}
       />
-      {isLive && !isElectionOver() && (
-        <>
-          <ElectionTimer endTime={Number(currentResults.endTime)} />
-          <LiveVoteCount 
-            candidates={activeCandidates}
-            isLive={true}
-          />
-        </>
-      )}
       <CardContent>
         {currentResults.totalVotes === 0n ? (
           <Alert>

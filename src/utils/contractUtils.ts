@@ -3,21 +3,9 @@ import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 import { config } from "@/config/web3";
 import { sepolia } from "wagmi/chains";
 
-type ContractWriteFunction = 
-  | "startElection"
-  | "vote"
-  | "approveVoter"
-  | "removeAllVoters"
-  | "addCandidate"
-  | "removeCandidate"
-  | "endElection";
-
-export const writeContractWithConfirmation = async (
-  functionName: ContractWriteFunction,
-  args: unknown[]
-) => {
+export const writeContractWithConfirmation = async (functionName: string, args: any[]) => {
   try {
-    const hash = await writeContract(config, {
+    const result = await writeContract(config, {
       address: CONTRACT_ADDRESS as `0x${string}`,
       abi: CONTRACT_ABI,
       functionName,
@@ -26,41 +14,27 @@ export const writeContractWithConfirmation = async (
     });
 
     await waitForTransaction(config, {
-      hash,
+      hash: result,
     });
 
-    return hash;
+    return result;
   } catch (error) {
     console.error(`Error in ${functionName}:`, error);
     throw error;
   }
 };
 
-export const getAdminAddress = async (): Promise<string> => {
+export const getVoterChoice = async (address: string, electionId: bigint) => {
   try {
-    const result = await readContract(config, {
+    const events = await readContract(config, {
       address: CONTRACT_ADDRESS as `0x${string}`,
       abi: CONTRACT_ABI,
-      functionName: 'admin'
+      functionName: 'getVoterChoice',
+      args: [address, electionId]
     });
-    return result as string;
+    return events;
   } catch (error) {
-    console.error('Error getting admin address:', error);
-    throw error;
-  }
-};
-
-export const checkVoterStatus = async (address: string): Promise<boolean> => {
-  try {
-    const result = await readContract(config, {
-      address: CONTRACT_ADDRESS as `0x${string}`,
-      abi: CONTRACT_ABI,
-      functionName: 'approvedVoters',
-      args: [address as `0x${string}`]
-    });
-    return result as boolean;
-  } catch (error) {
-    console.error('Error checking voter status:', error);
+    console.error("Error getting voter choice:", error);
     throw error;
   }
 };
