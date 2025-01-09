@@ -7,6 +7,7 @@ import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 import { config } from "@/config/web3";
 import { createPublicClient, http } from 'viem';
 import { sepolia } from 'viem/chains';
+import { useVoteCount } from "@/hooks/useVoteCount";
 
 interface ElectionResultCardProps {
   result: ElectionResult;
@@ -25,6 +26,7 @@ export const ElectionResultCard = ({
 }: ElectionResultCardProps) => {
   const { address } = useAccount();
   const [voterChoice, setVoterChoice] = useState<string>("");
+  const liveVoteCount = useVoteCount(Number(result.candidateId), isLive && !isElectionOver());
 
   const getPosition = (index: number) => {
     if (index === 0) return { color: "text-yellow-500", label: "1st" };
@@ -70,6 +72,7 @@ export const ElectionResultCard = ({
   }, [address, electionId, result, isLive]);
 
   const position = getPosition(index);
+  const displayVoteCount = isLive && !isElectionOver() ? liveVoteCount : result.voteCount;
 
   return (
     <div 
@@ -90,7 +93,7 @@ export const ElectionResultCard = ({
           </span>
         )}
         <p className="font-bold">
-          {result.voteCount.toString()} votes
+          {displayVoteCount.toString()} votes
           {isLive && !isElectionOver() && (
             <span className="text-xs text-purple-500 ml-1">(Live)</span>
           )}
