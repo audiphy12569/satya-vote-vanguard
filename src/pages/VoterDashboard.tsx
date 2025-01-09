@@ -29,14 +29,16 @@ const VoterDashboard = () => {
   useEffect(() => {
     const fetchElectionData = async () => {
       try {
+        // First, get the total number of candidates
         const count = await readContract(config, {
           address: CONTRACT_ADDRESS as `0x${string}`,
           abi: CONTRACT_ABI,
           functionName: 'getCandidateCount',
         });
 
+        // Fetch all candidates and store them temporarily
         const candidatesData: DashboardCandidate[] = [];
-        for (let i = 1; i <= Number(count); i++) {
+        for (let i = Number(count); i >= 1; i--) { // Changed loop to count down instead of up
           const candidate = await readContract(config, {
             address: CONTRACT_ADDRESS as `0x${string}`,
             abi: CONTRACT_ABI,
@@ -44,7 +46,7 @@ const VoterDashboard = () => {
             args: [BigInt(i)],
           }) as readonly [bigint, bigint, boolean, string, string, string, string];
 
-          if (candidate[2]) {
+          if (candidate[2]) { // if candidate is active
             candidatesData.push({
               id: i,
               name: candidate[3],
