@@ -2,10 +2,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ElectionHistory } from "@/types/election";
 import { useEffect, useState } from "react";
-import { getElectionHistory, getCurrentElectionId, getElectionStatus } from "@/utils/electionUtils";
+import { getElectionHistory, getCurrentElectionId, getElectionStatus, hasVoted } from "@/utils/electionUtils";
 import { useToast } from "@/hooks/use-toast";
 import { ElectionHeader } from "./election/ElectionHeader";
 import { ElectionResultCard } from "./election/ElectionResultCard";
+import { useAccount } from "wagmi";
+import { readContract } from '@wagmi/core';
+import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
+import { config } from "@/config/web3";
 
 interface ElectionResultsProps {
   election: ElectionHistory;
@@ -14,19 +18,65 @@ interface ElectionResultsProps {
 
 export const ElectionResults = ({ election, isLive = false }: ElectionResultsProps) => {
   const [currentResults, setCurrentResults] = useState(election);
+  const [voterChoice, setVoterChoice] = useState<string>("");
+  const { address } = useAccount();
   const { toast } = useToast();
   
   useEffect(() => {
     setCurrentResults(election);
+    
+    const fetchVoterChoice = async () => {
+      if (!address || !election.id) return;
+      
+      try {
+        // First check if the voter voted in this election
+        const voted = await readContract(config, {
+          address: CONTRACT_ADDRESS as `0x${string}`,
+          abi: CONTRACT_ABI,
+          functionName: 'hasVoted',
+          args: [address],
+        });
+
+        if (voted) {
+          // Find the candidate they voted for by checking the VoteCast events
+          const publicClient = await config.publicClient;
+          const events = await publicClient.getContractEvents({
+            address: CONTRACT_ADDRESS as `0x${string}`,
+            abi: CONTRACT_ABI,
+            eventName: 'VoteCast',
+            fromBlock: 0n,
+            toBlock: 'latest',
+            args: {
+              voter: address,
+              electionId: election.id
+            }
+          });
+
+          if (events && events.length > 0) {
+            const votedCandidateId = events[0].args.candidateId;
+            const candidate = currentResults.results.find(
+              r => r.candidateId === votedCandidateId
+            );
+            if (candidate) {
+              setVoterChoice(`You voted for ${candidate.candidateName} (${candidate.party})`);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch voter choice:", error);
+      }
+    };
+
+    if (!isLive && address) {
+      fetchVoterChoice();
+    }
     
     const fetchAndUpdateResults = async () => {
       try {
         const status = await getElectionStatus();
         const currentId = await getCurrentElectionId();
         
-        // Only fetch results if we're looking at the current election
         if (currentId === Number(election.id)) {
-          // Check if the election has ended based on time
           if (status.endTime && Date.now() / 1000 > Number(status.endTime)) {
             const updatedResults = await getElectionHistory(Number(currentId));
             
@@ -55,7 +105,7 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
       const timer = setInterval(fetchAndUpdateResults, 5000);
       return () => clearInterval(timer);
     }
-  }, [election, isLive, toast]);
+  }, [election, isLive, toast, address]);
 
   const sortedResults = [...currentResults.results].sort((a, b) => 
     Number(b.voteCount - a.voteCount)
@@ -85,6 +135,13 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
           </Alert>
         ) : (
           <div className="space-y-4">
+            {voterChoice && !isLive && (
+              <Alert className="bg-purple-50 border-purple-200 mb-4">
+                <AlertDescription className="text-purple-700">
+                  {voterChoice}
+                </AlertDescription>
+              </Alert>
+            )}
             {sortedResults.map((result, index) => (
               <ElectionResultCard
                 key={String(result.candidateId)}
