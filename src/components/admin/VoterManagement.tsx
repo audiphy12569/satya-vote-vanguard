@@ -31,7 +31,7 @@ export const VoterManagement = () => {
   const handleApproveVoter = async (voterAddress: string) => {
     setIsLoading(true);
     try {
-      const result = await writeContractWithConfirmation("approveVoter", [voterAddress]);
+      await writeContractWithConfirmation("approveVoter", [voterAddress]);
       toast({
         title: "Voter Approved",
         description: `Successfully approved ${voterAddress}`,
@@ -93,9 +93,9 @@ export const VoterManagement = () => {
             isLoading={isLoading}
           />
           <VoterList 
-            voters={voters} 
+            voterList={voters} 
             isLoading={isLoading} 
-            onRemove={async () => {}} // Empty async function since individual removal is not supported
+            onRemove={async () => {}} 
           />
         </div>
       </CardContent>

@@ -1,149 +1,106 @@
-import { useState } from "react";
-import { writeContract, getPublicClient, readContract } from '@wagmi/core';
+import { useState, useEffect } from "react";
+import { readContract, writeContract, waitForTransaction } from "@wagmi/core";
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
-import { config } from "@/config/web3";
-import { sepolia } from "wagmi/chains";
-import { getElectionStatus, hasVoted, getElectionHistory } from "@/utils/electionUtils";
 import { useToast } from "@/hooks/use-toast";
-import type { Hash } from 'viem';
+import { mainnet } from "viem/chains";
+import { writeContractWithConfirmation } from "@/utils/contractUtils";
 
-interface Candidate {
-  id: number;
-  name: string;
-  party: string;
-  tagline: string;
-  logoIPFS: string;
-  voteCount: bigint;
-}
-
-export const useElectionData = (address: `0x${string}` | undefined) => {
+export const useElectionData = () => {
   const { toast } = useToast();
-  const [electionActive, setElectionActive] = useState(false);
-  const [endTime, setEndTime] = useState<number>(0);
-  const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [hasUserVoted, setHasUserVoted] = useState(false);
-  const [pastElections, setPastElections] = useState<any[]>([]);
-  const [isVoting, setIsVoting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [electionEndTime, setElectionEndTime] = useState(0);
+  const [isElectionActive, setIsElectionActive] = useState(false);
 
-  const fetchCandidates = async () => {
+  const fetchElectionData = async () => {
     try {
-      const count = await readContract(config, {
+      const endTime = await readContract({
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
-        functionName: 'getCandidateCount',
+        functionName: "electionEndTime",
       });
 
-      const candidatesData = [];
-      for (let i = 1; i <= Number(count); i++) {
-        const candidate = await readContract(config, {
-          address: CONTRACT_ADDRESS as `0x${string}`,
-          abi: CONTRACT_ABI,
-          functionName: 'getCandidate',
-          args: [BigInt(i)],
-        });
-        candidatesData.push({
-          id: i,
-          name: candidate[0],
-          party: candidate[1],
-          tagline: candidate[2],
-          logoIPFS: candidate[3],
-          voteCount: candidate[4],
-        });
-      }
-      setCandidates(candidatesData);
-    } catch (error) {
-      console.error("Failed to fetch candidates:", error);
-    }
-  };
-
-  const fetchPastElections = async () => {
-    try {
-      const totalElections = await readContract(config, {
+      const active = await readContract({
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
-        functionName: 'getTotalElections',
+        functionName: "isElectionActive",
       });
 
-      const elections = [];
-      for (let i = 1; i <= Number(totalElections); i++) {
-        const election = await getElectionHistory(i);
-        if (election.id !== 0n) {
-          elections.push(election);
-        }
-      }
-      setPastElections(elections);
+      setElectionEndTime(Number(endTime));
+      setIsElectionActive(active as boolean);
     } catch (error) {
-      console.error("Failed to fetch past elections:", error);
-    }
-  };
-
-  const handleVote = async (candidateId: number) => {
-    if (!address) return;
-    
-    try {
-      setIsVoting(true);
-      const { hash } = await writeContract(config, {
-        address: CONTRACT_ADDRESS as `0x${string}`,
-        abi: CONTRACT_ABI,
-        functionName: 'vote',
-        args: [BigInt(candidateId)],
-        chain: sepolia,
-        account: address,
-      });
-
-      toast({
-        title: "Vote Submitted",
-        description: "Please wait for confirmation...",
-        variant: "default",
-      });
-
-      const publicClient = await getPublicClient(config);
-      await publicClient.waitForTransactionReceipt({ hash });
-      
-      setHasUserVoted(true);
-      await fetchCandidates();
-      
-      toast({
-        title: "Vote Successful",
-        description: "Your vote has been recorded.",
-        variant: "default",
-      });
-    } catch (error) {
-      console.error("Failed to vote:", error);
+      console.error("Failed to fetch election data:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to cast vote."
+        description: "Failed to fetch election data.",
+      });
+    }
+  };
+
+  const handleStartElection = async (duration: number) => {
+    try {
+      setIsLoading(true);
+      const tx = await writeContractWithConfirmation("startElection", [duration]);
+      if (typeof tx === 'string') {
+        await waitForTransaction({
+          hash: tx as `0x${string}`,
+        });
+      }
+      toast({
+        title: "Election Started",
+        description: "The election has been successfully started.",
+      });
+      await fetchElectionData();
+    } catch (error) {
+      console.error("Failed to start election:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to start the election.",
       });
     } finally {
-      setIsVoting(false);
+      setIsLoading(false);
     }
   };
 
-  const updateElectionStatus = async (address: `0x${string}`) => {
-    const status = await getElectionStatus();
-    setElectionActive(status.isActive);
-    setEndTime(Number(status.endTime));
-
-    if (status.isActive) {
-      const voted = await hasVoted(address);
-      setHasUserVoted(voted);
-      await fetchCandidates();
+  const handleEndElection = async () => {
+    try {
+      setIsLoading(true);
+      const tx = await writeContractWithConfirmation("endElection", []);
+      if (typeof tx === 'string') {
+        await waitForTransaction({
+          hash: tx as `0x${string}`,
+        });
+      }
+      toast({
+        title: "Election Ended",
+        description: "The election has been successfully ended.",
+      });
+      await fetchElectionData();
+    } catch (error) {
+      console.error("Failed to end election:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to end the election.",
+      });
+    } finally {
+      setIsLoading(false);
     }
-
-    await fetchPastElections();
   };
+
+  useEffect(() => {
+    fetchElectionData();
+    // Poll for updates every 30 seconds
+    const interval = setInterval(fetchElectionData, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   return {
-    electionActive,
-    endTime,
-    candidates,
-    hasUserVoted,
-    pastElections,
-    isVoting,
-    handleVote,
-    updateElectionStatus,
-    fetchCandidates,
-    fetchPastElections,
+    isLoading,
+    electionEndTime,
+    isElectionActive,
+    startElection: handleStartElection,
+    endElection: handleEndElection,
   };
 };
