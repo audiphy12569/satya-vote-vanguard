@@ -13,20 +13,14 @@ export const useElectionData = () => {
 
   const fetchElectionData = async () => {
     try {
-      const endTime = await readContract(config, {
+      const status = await readContract(config, {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
-        functionName: "electionEndTime",
-      });
+        functionName: "getElectionStatus",
+      }) as readonly [boolean, bigint, bigint, bigint];
 
-      const active = await readContract(config, {
-        address: CONTRACT_ADDRESS as `0x${string}`,
-        abi: CONTRACT_ABI,
-        functionName: "isElectionActive",
-      });
-
-      setElectionEndTime(Number(endTime));
-      setIsElectionActive(active as boolean);
+      setElectionEndTime(Number(status[2])); // endTime is at index 2
+      setIsElectionActive(status[0]); // isActive is at index 0
     } catch (error) {
       console.error("Failed to fetch election data:", error);
       toast({

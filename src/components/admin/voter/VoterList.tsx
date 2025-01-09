@@ -1,46 +1,42 @@
-import { useEffect, useState } from "react";
-import { readContract } from '@wagmi/core';
-import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
-import { config } from "@/config/web3";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Loader2, UserX } from "lucide-react";
 
-export const VoterList = () => {
-  const [voters, setVoters] = useState<string[]>([]);
+interface VoterListProps {
+  voterList: string[];
+  isLoading: boolean;
+  onRemove: () => Promise<void>;
+}
 
-  useEffect(() => {
-    const fetchVoters = async () => {
-      try {
-        const data = await readContract(config, {
-          address: CONTRACT_ADDRESS as `0x${string}`,
-          abi: CONTRACT_ABI,
-          functionName: 'getAllVoters',
-        }) as string[];
-        setVoters(data);
-      } catch (error) {
-        console.error("Failed to fetch voters:", error);
-      }
-    };
-
-    fetchVoters();
-  }, []);
-
+export const VoterList = ({ voterList, isLoading, onRemove }: VoterListProps) => {
   return (
-    <Card className="mt-4">
-      <CardContent className="p-4">
-        <ScrollArea className="h-[200px] rounded-md border p-4">
-          {voters.map((voter, index) => (
+    <ScrollArea className="h-[400px] w-full rounded-md border p-4">
+      {voterList.length === 0 ? (
+        <p className="text-center text-gray-500">No voters found</p>
+      ) : (
+        <div className="space-y-4">
+          {voterList.map((voter, index) => (
             <div
-              key={voter}
-              className="flex items-center py-2 border-b last:border-0"
+              key={index}
+              className="flex items-center justify-between rounded-lg border p-4"
             >
-              <span className="text-sm font-medium truncate hover:text-clip">
-                {voter}
-              </span>
+              <span className="font-mono text-sm">{voter}</span>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={onRemove}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <UserX className="h-4 w-4" />
+                )}
+              </Button>
             </div>
           ))}
-        </ScrollArea>
-      </CardContent>
-    </Card>
+        </div>
+      )}
+    </ScrollArea>
   );
 };
