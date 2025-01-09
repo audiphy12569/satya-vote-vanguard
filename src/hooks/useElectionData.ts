@@ -4,12 +4,17 @@ import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 import { useToast } from "@/hooks/use-toast";
 import { config } from "@/config/web3";
 import { writeContractWithConfirmation } from "@/utils/contractUtils";
+import { ElectionHistory } from "@/types/election";
 
-export const useElectionData = () => {
+export const useElectionData = (address?: string) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [electionEndTime, setElectionEndTime] = useState(0);
   const [isElectionActive, setIsElectionActive] = useState(false);
+  const [candidates, setCandidates] = useState([]);
+  const [hasUserVoted, setHasUserVoted] = useState(false);
+  const [pastElections, setPastElections] = useState<ElectionHistory[]>([]);
+  const [isVoting, setIsVoting] = useState(false);
 
   const fetchElectionData = async () => {
     try {
@@ -31,48 +36,30 @@ export const useElectionData = () => {
     }
   };
 
-  const handleStartElection = async (duration: number) => {
+  const handleVote = async (candidateId: number) => {
     try {
-      setIsLoading(true);
-      const hash = await writeContractWithConfirmation("startElection", [duration]);
+      setIsVoting(true);
+      const hash = await writeContractWithConfirmation("vote", [BigInt(candidateId)]);
       toast({
-        title: "Election Started",
-        description: "The election has been successfully started.",
+        title: "Vote Cast Successfully",
+        description: "Your vote has been recorded.",
       });
       await fetchElectionData();
       return hash;
     } catch (error) {
-      console.error("Failed to start election:", error);
+      console.error("Failed to cast vote:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to start the election.",
+        description: "Failed to cast your vote.",
       });
     } finally {
-      setIsLoading(false);
+      setIsVoting(false);
     }
   };
 
-  const handleEndElection = async () => {
-    try {
-      setIsLoading(true);
-      const hash = await writeContractWithConfirmation("endElection", []);
-      toast({
-        title: "Election Ended",
-        description: "The election has been successfully ended.",
-      });
-      await fetchElectionData();
-      return hash;
-    } catch (error) {
-      console.error("Failed to end election:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to end the election.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const updateElectionStatus = async () => {
+    await fetchElectionData();
   };
 
   useEffect(() => {
@@ -85,7 +72,55 @@ export const useElectionData = () => {
     isLoading,
     electionEndTime,
     isElectionActive,
-    startElection: handleStartElection,
-    endElection: handleEndElection,
+    candidates,
+    hasUserVoted,
+    pastElections,
+    isVoting,
+    handleVote,
+    updateElectionStatus,
+    startElection: async (duration: number) => {
+      try {
+        setIsLoading(true);
+        const hash = await writeContractWithConfirmation("startElection", [duration]);
+        toast({
+          title: "Election Started",
+          description: "The election has been successfully started.",
+        });
+        await fetchElectionData();
+        return hash;
+      } catch (error) {
+        console.error("Failed to start election:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to start the election.",
+        });
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    endElection: async () => {
+      try {
+        setIsLoading(true);
+        const hash = await writeContractWithConfirmation("endElection", []);
+        toast({
+          title: "Election Ended",
+          description: "The election has been successfully ended.",
+        });
+        await fetchElectionData();
+        return hash;
+      } catch (error) {
+        console.error("Failed to end election:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to end the election.",
+        });
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
   };
 };

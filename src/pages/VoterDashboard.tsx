@@ -10,7 +10,7 @@ import { VoterEligibilityStatus } from "@/components/voter/VoterEligibilityStatu
 import { CurrentElectionVoting } from "@/components/voter/CurrentElectionVoting";
 import { useElectionData } from "@/hooks/useElectionData";
 
-export const VoterDashboard = () => {
+const VoterDashboard = () => {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { toast } = useToast();
@@ -151,3 +151,5 @@ export const VoterDashboard = () => {
     </div>
   );
 };
+
+export default VoterDashboard;
