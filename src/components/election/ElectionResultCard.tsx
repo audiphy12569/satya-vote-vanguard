@@ -4,7 +4,6 @@ import { useAccount } from "wagmi";
 import { useEffect, useState } from "react";
 import { readContract } from "@wagmi/core";
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
-import { config } from "@/config/web3";
 import { createPublicClient, http } from 'viem';
 import { sepolia } from 'viem/chains';
 import { useVoteCount } from "@/hooks/useVoteCount";

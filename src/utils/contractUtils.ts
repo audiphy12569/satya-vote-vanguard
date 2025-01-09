@@ -39,8 +39,8 @@ export const getAdminAddress = async (): Promise<string> => {
 };
 
 export const writeContractWithConfirmation = async (
-  functionName: string,
-  args: any[],
+  functionName: "addCandidate" | "approveVoter" | "removeAllVoters" | "removeCandidate" | "startElection" | "vote",
+  args: readonly [] | readonly [`0x${string}`] | readonly [string, string, string, string] | readonly [bigint],
   address?: string
 ) => {
   try {
@@ -114,7 +114,7 @@ export const getElectionHistory = async (electionId: number): Promise<ElectionHi
       abi: CONTRACT_ABI,
       functionName: 'getElectionHistory',
       args: [BigInt(electionId)],
-    }) as [bigint, bigint, bigint, bigint, ElectionResult[]];
+    }) as unknown as [bigint, bigint, bigint, bigint, ElectionResult[]];
     
     return {
       id: data[0],

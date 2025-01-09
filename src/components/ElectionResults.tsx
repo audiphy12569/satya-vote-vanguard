@@ -6,12 +6,8 @@ import { getElectionHistory, getCurrentElectionId, getElectionStatus } from "@/u
 import { useToast } from "@/hooks/use-toast";
 import { ElectionHeader } from "./election/ElectionHeader";
 import { ElectionResultCard } from "./election/ElectionResultCard";
+import { ElectionTimer } from "./ElectionTimer";
 import { useAccount } from "wagmi";
-import { readContract } from '@wagmi/core';
-import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
-import { config } from "@/config/web3";
-import { createPublicClient, http } from 'viem';
-import { sepolia } from 'viem/chains';
 
 interface ElectionResultsProps {
   election: ElectionHistory;
@@ -83,6 +79,9 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
         endTime={currentResults.endTime}
         isElectionOver={isElectionOver}
       />
+      {isLive && !isElectionOver() && (
+        <ElectionTimer endTime={Number(currentResults.endTime)} />
+      )}
       <CardContent>
         {currentResults.totalVotes === 0n ? (
           <Alert>
