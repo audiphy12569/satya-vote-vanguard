@@ -1,40 +1,158 @@
-import { writeContract, waitForTransaction, readContract } from '@wagmi/core';
+import { readContract, writeContract } from '@wagmi/core';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 import { config } from "@/config/web3";
-import { sepolia } from "wagmi/chains";
 
-export const writeContractWithConfirmation = async (functionName: string, args: any[]) => {
+interface ElectionStatus {
+  isActive: boolean;
+  startTime: bigint;
+  endTime: bigint;
+  totalVotes: bigint;
+}
+
+interface ElectionResult {
+  candidateId: number;
+  voteCount: number;
+  candidateName: string;
+  party: string;
+}
+
+interface ElectionHistory {
+  id: bigint;
+  startTime: bigint;
+  endTime: bigint;
+  totalVotes: bigint;
+  results: ElectionResult[];
+}
+
+export const getAdminAddress = async (): Promise<string> => {
   try {
-    const result = await writeContract(config, {
+    const data = await readContract(config, {
       address: CONTRACT_ADDRESS as `0x${string}`,
       abi: CONTRACT_ABI,
-      functionName,
-      args,
-      chain: sepolia
+      functionName: 'admin',
     });
-
-    await waitForTransaction(config, {
-      hash: result,
-    });
-
-    return result;
+    return data as string;
   } catch (error) {
-    console.error(`Error in ${functionName}:`, error);
+    console.error("Failed to fetch admin address:", error);
     throw error;
   }
 };
 
-export const getVoterChoice = async (address: string, electionId: bigint) => {
+export const writeContractWithConfirmation = async (
+  functionName: string,
+  args: any[],
+  address?: string
+) => {
   try {
-    const events = await readContract(config, {
+    const { hash } = await writeContract(config, {
       address: CONTRACT_ADDRESS as `0x${string}`,
       abi: CONTRACT_ABI,
-      functionName: 'getVoterChoice',
-      args: [address, electionId]
+      functionName,
+      args,
+      account: address as `0x${string}`,
     });
-    return events;
+    return hash;
   } catch (error) {
-    console.error("Error getting voter choice:", error);
+    console.error(`Failed to execute ${functionName}:`, error);
+    throw error;
+  }
+};
+
+export const checkVoterStatus = async (address: string): Promise<boolean> => {
+  try {
+    const result = await readContract(config, {
+      address: CONTRACT_ADDRESS as `0x${string}`,
+      abi: CONTRACT_ABI,
+      functionName: 'approvedVoters',
+      args: [address as `0x${string}`],
+    });
+    return result as boolean;
+  } catch (error) {
+    console.error("Failed to check voter status:", error);
+    return false;
+  }
+};
+
+export const getElectionStatus = async (): Promise<ElectionStatus> => {
+  try {
+    const data = await readContract(config, {
+      address: CONTRACT_ADDRESS as `0x${string}`,
+      abi: CONTRACT_ABI,
+      functionName: 'getElectionStatus',
+    }) as [boolean, bigint, bigint, bigint];
+    
+    return {
+      isActive: data[0],
+      startTime: data[1],
+      endTime: data[2],
+      totalVotes: data[3],
+    };
+  } catch (error) {
+    console.error("Failed to fetch election status:", error);
+    throw error;
+  }
+};
+
+export const getCurrentElectionId = async (): Promise<number> => {
+  try {
+    const data = await readContract(config, {
+      address: CONTRACT_ADDRESS as `0x${string}`,
+      abi: CONTRACT_ABI,
+      functionName: 'currentElectionId',
+    });
+    return Number(data);
+  } catch (error) {
+    console.error("Failed to fetch current election ID:", error);
+    throw error;
+  }
+};
+
+export const getElectionHistory = async (electionId: number): Promise<ElectionHistory> => {
+  try {
+    const data = await readContract(config, {
+      address: CONTRACT_ADDRESS as `0x${string}`,
+      abi: CONTRACT_ABI,
+      functionName: 'getElectionHistory',
+      args: [BigInt(electionId)],
+    }) as [bigint, bigint, bigint, bigint, ElectionResult[]];
+    
+    return {
+      id: data[0],
+      startTime: data[1],
+      endTime: data[2],
+      totalVotes: data[3],
+      results: data[4],
+    };
+  } catch (error) {
+    console.error("Failed to fetch election history:", error);
+    throw error;
+  }
+};
+
+export const hasVoted = async (address: string): Promise<boolean> => {
+  try {
+    return await readContract(config, {
+      address: CONTRACT_ADDRESS as `0x${string}`,
+      abi: CONTRACT_ABI,
+      functionName: 'hasVoted',
+      args: [address as `0x${string}`],
+    }) as boolean;
+  } catch (error) {
+    console.error("Failed to check voting status:", error);
+    throw error;
+  }
+};
+
+export const getActiveCandidateCount = async (): Promise<number> => {
+  try {
+    const count = await readContract(config, {
+      address: CONTRACT_ADDRESS as `0x${string}`,
+      abi: CONTRACT_ABI,
+      functionName: 'getActiveCandidateCount',
+    });
+    return Number(count);
+  } catch (error) {
+    console.error("Failed to fetch active candidate count:", error);
     throw error;
   }
 };

@@ -18,7 +18,6 @@ export const ElectionTimer = ({ endTime }: ElectionTimerProps) => {
       if (diff <= 0) {
         setTimeLeft("Election ended");
         setIsEnded(true);
-        // Check election status to ensure it's properly updated
         await getElectionStatus();
         return;
       }
@@ -29,22 +28,19 @@ export const ElectionTimer = ({ endTime }: ElectionTimerProps) => {
       setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
     };
 
-    // Update immediately
     updateTimer();
-    
-    // Then update every second
     const timer = setInterval(updateTimer, 1000);
 
     return () => clearInterval(timer);
   }, [endTime]);
 
   return (
-    <Card className={`${isEnded ? 'bg-red-50 border-red-200' : 'bg-purple-50 border-purple-200'} mb-4`}>
+    <Card className={`${isEnded ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800' : 'bg-purple-50 dark:bg-purple-900/10 border-purple-200 dark:border-purple-800'} mb-4 w-full max-w-full overflow-hidden`}>
       <CardContent className="p-4 text-center">
-        <p className={`text-sm font-medium ${isEnded ? 'text-red-600' : 'text-purple-600'}`}>
+        <p className={`text-sm font-medium ${isEnded ? 'text-red-600 dark:text-red-400' : 'text-purple-600 dark:text-purple-400'}`}>
           {isEnded ? 'Election Status' : 'Time Remaining'}
         </p>
-        <p className={`text-2xl font-bold ${isEnded ? 'text-red-800' : 'text-purple-800'}`}>
+        <p className={`text-xl md:text-2xl font-bold ${isEnded ? 'text-red-800 dark:text-red-200' : 'text-purple-800 dark:text-purple-200'}`}>
           {timeLeft}
         </p>
       </CardContent>
