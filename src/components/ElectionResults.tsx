@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ElectionHeader } from "./election/ElectionHeader";
 import { ElectionResultCard } from "./election/ElectionResultCard";
 import { ElectionTimer } from "./ElectionTimer";
+import { LiveVoteCount } from "./election/LiveVoteCount";
 import { useAccount } from "wagmi";
 
 interface ElectionResultsProps {
@@ -70,6 +71,13 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
     return null;
   }
 
+  const activeCandidates = sortedResults.map(result => ({
+    id: Number(result.candidateId),
+    name: result.candidateName,
+    party: result.party,
+    logoIPFS: result.logoIPFS
+  }));
+
   return (
     <Card className="mb-4">
       <ElectionHeader 
@@ -80,7 +88,13 @@ export const ElectionResults = ({ election, isLive = false }: ElectionResultsPro
         isElectionOver={isElectionOver}
       />
       {isLive && !isElectionOver() && (
-        <ElectionTimer endTime={Number(currentResults.endTime)} />
+        <>
+          <ElectionTimer endTime={Number(currentResults.endTime)} />
+          <LiveVoteCount 
+            candidates={activeCandidates}
+            isLive={true}
+          />
+        </>
       )}
       <CardContent>
         {currentResults.totalVotes === 0n ? (
