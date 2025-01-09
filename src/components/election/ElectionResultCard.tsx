@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Medal } from "lucide-react";
 import { ElectionResult } from "@/types/election";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface ElectionResultCardProps {
   result: ElectionResult;
@@ -22,7 +23,7 @@ export const ElectionResultCard = ({ result, index, isLive, isElectionOver }: El
   return (
     <div 
       key={String(result.candidateId)} 
-      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100"
+      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100 relative"
     >
       <div className="flex items-center space-x-3">
         <Medal className={`h-5 w-5 ${position.color}`} />
@@ -31,13 +32,25 @@ export const ElectionResultCard = ({ result, index, isLive, isElectionOver }: El
           <p className="text-sm text-gray-500">{result.party}</p>
         </div>
       </div>
-      <div className="text-right">
-        <p className="font-bold">
-          {result.voteCount.toString()} votes
-          {isLive && !isElectionOver() && (
-            <span className="text-xs text-purple-500 ml-1">(Live)</span>
-          )}
-        </p>
+      <div className="flex items-center space-x-4">
+        <div className="text-right">
+          <p className="font-bold">
+            {result.voteCount.toString()} votes
+            {isLive && !isElectionOver() && (
+              <span className="text-xs text-purple-500 ml-1">(Live)</span>
+            )}
+          </p>
+        </div>
+        <Avatar className="h-8 w-8">
+          <AvatarImage 
+            src={result.logoIPFS} 
+            alt={result.candidateName} 
+            className="object-cover"
+          />
+          <AvatarFallback className="bg-purple-100 text-purple-700">
+            {result.candidateName.charAt(0)}
+          </AvatarFallback>
+        </Avatar>
       </div>
     </div>
   );
