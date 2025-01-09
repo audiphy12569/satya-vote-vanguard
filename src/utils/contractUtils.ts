@@ -1,23 +1,23 @@
 import { writeContract, waitForTransaction, readContract } from '@wagmi/core';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
-import { sepolia } from "wagmi/chains";
 import { config } from "@/config/web3";
+import { sepolia } from "wagmi/chains";
 
-type ContractFunction = 
+type ContractWriteFunction = 
   | "startElection"
-  | "endElection"
   | "vote"
   | "approveVoter"
   | "removeAllVoters"
   | "addCandidate"
-  | "removeCandidate";
+  | "removeCandidate"
+  | "endElection";
 
 export const writeContractWithConfirmation = async (
-  functionName: ContractFunction,
-  args: readonly unknown[]
+  functionName: ContractWriteFunction,
+  args: unknown[]
 ) => {
   try {
-    const result = await writeContract(config, {
+    const hash = await writeContract(config, {
       address: CONTRACT_ADDRESS as `0x${string}`,
       abi: CONTRACT_ABI,
       functionName,
@@ -26,10 +26,10 @@ export const writeContractWithConfirmation = async (
     });
 
     await waitForTransaction(config, {
-      hash: result,
+      hash,
     });
 
-    return result;
+    return hash;
   } catch (error) {
     console.error(`Error in ${functionName}:`, error);
     throw error;
