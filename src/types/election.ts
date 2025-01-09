@@ -3,6 +3,7 @@ export interface ElectionResult {
   candidateName: string;
   party: string;
   voteCount: bigint;
+  logoIPFS?: string;
 }
 
 export interface ElectionHistory {
