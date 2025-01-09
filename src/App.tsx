@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Navbar } from "./components/Navbar";
 import { Landing } from "./pages/Landing";
 import { AdminDashboard } from "./pages/AdminDashboard";
-import { VoterDashboard } from "./pages/VoterDashboard";
+import VoterDashboard from "./pages/VoterDashboard";
 import { ElectionHistory } from "./pages/ElectionHistory";
 import { VoterManagementPanel } from "./pages/admin/VoterManagementPanel";
 import { CandidateManagementPanel } from "./pages/admin/CandidateManagementPanel";

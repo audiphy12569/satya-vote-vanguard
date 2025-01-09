@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getActiveCandidateCount, getElectionStatus } from "@/utils/electionUtils";
 import { writeContractWithConfirmation } from "@/utils/contractUtils";
 import { useAccount } from 'wagmi';
+import { config } from "@/config/web3";
 
 export const ElectionControl = () => {
   const { toast } = useToast();
@@ -20,7 +21,7 @@ export const ElectionControl = () => {
     };
     
     checkElectionStatus();
-    const interval = setInterval(checkElectionStatus, 10000); // Check every 10 seconds
+    const interval = setInterval(checkElectionStatus, 10000);
     
     return () => clearInterval(interval);
   }, []);
@@ -48,19 +49,13 @@ export const ElectionControl = () => {
         return;
       }
 
-      // Start new election
-      await writeContractWithConfirmation(
-        'startElection',
-        [BigInt(duration)],
-        address
-      );
+      await writeContractWithConfirmation('startElection', [BigInt(duration)]);
       
       toast({
         title: "Success",
         description: "Election started successfully",
       });
       
-      // Refresh election status
       const status = await getElectionStatus();
       setIsElectionActive(status.isActive);
     } catch (error) {

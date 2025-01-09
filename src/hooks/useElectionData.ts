@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { readContract, writeContract, waitForTransaction } from "@wagmi/core";
+import { readContract } from "@wagmi/core";
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 import { useToast } from "@/hooks/use-toast";
-import { mainnet } from "viem/chains";
+import { config } from "@/config/web3";
 import { writeContractWithConfirmation } from "@/utils/contractUtils";
 
 export const useElectionData = () => {
@@ -13,13 +13,13 @@ export const useElectionData = () => {
 
   const fetchElectionData = async () => {
     try {
-      const endTime = await readContract({
+      const endTime = await readContract(config, {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
         functionName: "electionEndTime",
       });
 
-      const active = await readContract({
+      const active = await readContract(config, {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
         functionName: "isElectionActive",
@@ -40,17 +40,13 @@ export const useElectionData = () => {
   const handleStartElection = async (duration: number) => {
     try {
       setIsLoading(true);
-      const tx = await writeContractWithConfirmation("startElection", [duration]);
-      if (typeof tx === 'string') {
-        await waitForTransaction({
-          hash: tx as `0x${string}`,
-        });
-      }
+      const hash = await writeContractWithConfirmation("startElection", [duration]);
       toast({
         title: "Election Started",
         description: "The election has been successfully started.",
       });
       await fetchElectionData();
+      return hash;
     } catch (error) {
       console.error("Failed to start election:", error);
       toast({
@@ -66,17 +62,13 @@ export const useElectionData = () => {
   const handleEndElection = async () => {
     try {
       setIsLoading(true);
-      const tx = await writeContractWithConfirmation("endElection", []);
-      if (typeof tx === 'string') {
-        await waitForTransaction({
-          hash: tx as `0x${string}`,
-        });
-      }
+      const hash = await writeContractWithConfirmation("endElection", []);
       toast({
         title: "Election Ended",
         description: "The election has been successfully ended.",
       });
       await fetchElectionData();
+      return hash;
     } catch (error) {
       console.error("Failed to end election:", error);
       toast({
@@ -91,7 +83,6 @@ export const useElectionData = () => {
 
   useEffect(() => {
     fetchElectionData();
-    // Poll for updates every 30 seconds
     const interval = setInterval(fetchElectionData, 30000);
     return () => clearInterval(interval);
   }, []);
