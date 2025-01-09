@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { readContract } from "@wagmi/core";
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
 import { config } from "@/config/web3";
+import { createPublicClient, http } from 'viem';
+import { sepolia } from 'viem/chains';
 
 interface ElectionResultCardProps {
   result: ElectionResult;
@@ -36,15 +38,28 @@ export const ElectionResultCard = ({
       if (!address || !electionId || isLive) return;
       
       try {
-        const hasVoted = await readContract(config, {
-          address: CONTRACT_ADDRESS as `0x${string}`,
-          abi: CONTRACT_ABI,
-          functionName: 'hasVoted',
-          args: [address as `0x${string}`]
+        const publicClient = createPublicClient({
+          chain: sepolia,
+          transport: http()
         });
 
-        if (hasVoted && result.candidateId === result.candidateId) {
-          setVoterChoice(`You voted ${result.party}`);
+        const events = await publicClient.getContractEvents({
+          address: CONTRACT_ADDRESS as `0x${string}`,
+          abi: CONTRACT_ABI,
+          eventName: 'VoteCast',
+          fromBlock: 0n,
+          toBlock: 'latest',
+          args: {
+            voter: address as `0x${string}`,
+            electionId: electionId
+          }
+        });
+
+        if (events && events.length > 0) {
+          const votedCandidateId = events[0].args.candidateId;
+          if (votedCandidateId === result.candidateId) {
+            setVoterChoice(`You voted ${result.party}`);
+          }
         }
       } catch (error) {
         console.error("Error checking voter choice:", error);
